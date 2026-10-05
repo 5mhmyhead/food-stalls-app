@@ -1,9 +1,9 @@
 import { StyleSheet, Text, View } from "react-native";
 
-export default function Index() {
+export default function Menu() {
   return (
     <View style={styles.container}>
-      <Text>Dashboard</Text>
+      <Text>Menu</Text>
     </View>
   );
 }

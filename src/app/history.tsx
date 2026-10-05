@@ -1,9 +1,9 @@
 import { StyleSheet, Text, View } from "react-native";
 
-export default function Index() {
+export default function History() {
   return (
     <View style={styles.container}>
-      <Text>Dashboard</Text>
+      <Text>History</Text>
     </View>
   );
 }
