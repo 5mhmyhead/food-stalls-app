@@ -6,7 +6,7 @@
 
 **Demo By:** Dwyane S. Sido
 
-**Demo By:** Project Initialization and Bottom Navigation Bar
+**Goal:** Project Initialization and Bottom Navigation Bar
 
 ## Tasks
 
