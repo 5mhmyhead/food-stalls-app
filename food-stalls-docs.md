@@ -6,8 +6,8 @@
 
 **System Architecture**
 
-![System Architecture](./docs-images/architecture.png)
+![System Architecture](./docs-images/new_archi.png)
 
 **Entity Relationship Diagram (ERD)**
 
-![User Flow](./docs-images/User_Flow.png)
+![User Flow](./docs-images/User%20Flow.png)
