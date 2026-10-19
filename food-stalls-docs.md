@@ -10,4 +10,4 @@
 
 **Entity Relationship Diagram (ERD)**
 
-![User Flow](./docs-images/user_flow.png)
+![User Flow](./docs-images/User_Flow.png)
