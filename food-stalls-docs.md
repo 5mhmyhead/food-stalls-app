@@ -1,13 +1,13 @@
 **Food Stalls App**
 
+![Kawaii Count](./assets/Kawaii%20Count.png)
+
 **Technical Diagrams**
 
-![][image1]  
 **System Architecture**
 
-**![][image2]**
+![System Architecture](./assets/architecture.png)
 
 **Entity Relationship Diagram (ERD)**
 
-**![][image3]**
-
+![User Flow](./assets/user_flow.png)
