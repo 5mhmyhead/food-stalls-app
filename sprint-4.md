@@ -12,36 +12,42 @@
 
 | Task                                                                                 | Member             | Status       |
 | ------------------------------------------------------------------------------------ | ------------------ | ------------ |
-| 4.1 Design the ERD for user, product, and menu entities                              | Dave Bartolabac    | In Progress  |
-| 4.2 Matching UI design                                                               | Dwyane Sido        | In Progress  |
-| 4.3 Finalize Figma mockups design and polish                                         | Jezcois Garganza   | In Progress  |
-| 4.4 Implement doc.md file in GitHub repository                                       | Dave Bartolabac    | In Progress  |
-| 4.5 Update web screens to match backend schema                                       | Dwyane Sido        | Done         |
-| 4.6 Update mobile screens to match backend schema                                    | Adi De Vera        | In Progress  |
-| 4.7 Create Supabase database and connect to mobile and web                           | Dave Bartolabac    | In Progress  |
-
+| 4.1 Implementing authentication for sign-up, log-in and forget password pages        | Dave Bartolabac    |     Done     |
+| 4.2 Create UI implementation for payout order, details menu, and orders page for web.| Dwyane Sido        | In Progress  |
+| 4.3 Create UI implementation for payout order, details menu, and orders page for mobile.     | Jezcois Garganza        | In Progress  |
+| 4.4 Create UI implementation for dashboard, history screen and history details pages for web.| Dwyane Sido        | In Progress  |
+| 4.5 Create UI implementation for dashboard, history screen and history details pages for mobile.| Adi De Vera        | In Progress  |
+| 4.6 Create UI implementation for menu and profile page for web.                              | Dwyane Sido        | In Progress  |
+| 4.7 Create UI implementation for menu and profile page for mobile.                              | Adi De Vera        | In Progress  |
+| 4.8 Create UI implementation for create category, details menu and edit item pages for web.  | Dwyane Sido        | In Progress  |
+| 4.9 Create UI implementation for create category, details menu and edit item pages for mobile.  | Adi De Vera        | In Progress  |
+| 4.10 Create UI implementation for menu and profile page for web.                              | Dwyane Sido       | In Progress  |
+| 4.11 Create UI implementation for menu and profile page for mobile.                              | Jezcois Garganza  | In Progress  |
+| 4.12 Creating UI implementation for settings page for mobile.                         | Jezcois Garganza   | In Progress  |
+| 4.13 Creating UI implementation for settings page for web.                            | Dwyane Sido        | In Progress  |
+ 
 ## Member Activity
 
 ### Dwyane Sido
 
-- **Done:** 3.2 Match the Figma mockups to match completed database schema, 3.5 Update web screens to match backend schema
-- **Next:** TBA
-- **Blockers:** 3.1 Backend Schema
+- **Done:** None
+- **Next:** 4.2 Create UI implementation for payout order
+- **Blockers:** None
 
 ### Jezcois Garganza
 
-- **Done:** 3.3 Finalize Figma mockups design and polish
-- **Next:** TBA
-- **Blockers:** 3.1 Backend Schema
+- **Done:** None
+- **Next:** 4.3 Create UI implementation for payout order, details menu, and orders page for mobile
+- **Blockers:** None
 
 ### Adi De Vera
 
-- **Done:** 3.6 Update mobile screens to match backend schema  
-- **Next:** TBA
-- **Blockers:** 3.1 Backend Schema
+- **Done:** None 
+- **Next:**  4.5 Create UI implementation for dashboard, history screen and history details pages for mobile
+- **Blockers:** None
 
 ### Dave Bartolabac
 
-- **Done:** 3.1 Design the ERD for user, product, and menu entities, 3.4 Implement doc.md file in GitHub repository, 3.7 Create Supabase database and connect to mobile and web 
+- **Done:**  4.1 Implementing authentication for sign-up, log-in and forget password pages
 - **Next:** TBA
 - **Blockers:** None
