@@ -1,17 +1,23 @@
-import TabBar from "@/components/TabBar";
-import { Tabs } from "expo-router";
+import { useLoggedIn } from "@/auth";
+import { Stack } from "expo-router";
+
+export const unstable_settings = {
+  anchor: "sign-in",
+};
 
 export default function RootLayout() {
+  const loggedIn = useLoggedIn();
+
   return (
-    <Tabs 
-      screenOptions={{ headerShown: false }} 
-      tabBar={(props: any) => <TabBar {...props} />}
-    >
-      <Tabs.Screen name="index" options={{ title: "Home" }} />
-      <Tabs.Screen name="menu" options={{ title: "Menu" }} />
-      <Tabs.Screen name="orders" options={{ title: "Orders" }} />
-      <Tabs.Screen name="history" options={{ title: "History" }} />
-      <Tabs.Screen name="profile" options={{ title: "Profile" }} />
-    </Tabs>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={!loggedIn}>
+        <Stack.Screen name="sign-in" />
+        <Stack.Screen name="sign-up" />
+        <Stack.Screen name="recover" />
+      </Stack.Protected>
+      <Stack.Protected guard={loggedIn}>
+        <Stack.Screen name="(tabs)" />
+      </Stack.Protected>
+    </Stack>
   );
 }
