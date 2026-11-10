@@ -1,25 +1,25 @@
 import {
-    PlayfairDisplay_900Black_Italic,
-    useFonts,
+  PlayfairDisplay_900Black_Italic,
+  useFonts,
 } from "@expo-google-fonts/playfair-display";
 import {
-    Poppins_400Regular,
-    Poppins_600SemiBold,
-    Poppins_700Bold,
+  Poppins_400Regular,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
 } from "@expo-google-fonts/poppins";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
-    Dimensions,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from "react-native";
 
 const { width: SW, height: SH } = Dimensions.get("window");
@@ -217,7 +217,15 @@ export function Heading({
   );
 }
 
-export function SearchBar({ placeholder }: { placeholder: string }) {
+export function SearchBar({
+  placeholder,
+  value,
+  onChangeText,
+}: {
+  placeholder: string;
+  value?: string;
+  onChangeText?: (t: string) => void;
+}) {
   return (
     <View style={styles.search}>
       <Ionicons name="search-outline" size={18 * u} color={COLORS.pink} />
@@ -225,7 +233,18 @@ export function SearchBar({ placeholder }: { placeholder: string }) {
         style={styles.searchInput}
         placeholder={placeholder}
         placeholderTextColor={COLORS.navy}
+        value={value}
+        onChangeText={onChangeText}
+        autoCapitalize="none"
       />
+      {value ? (
+        <TouchableOpacity
+          onPress={() => onChangeText && onChangeText("")}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="close-circle" size={18 * u} color={COLORS.pink} />
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 }

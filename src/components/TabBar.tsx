@@ -1,5 +1,6 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter, useSegments } from "expo-router";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import type { ReactElement } from "react";
 import {
   Dimensions,
   StyleSheet,
@@ -7,26 +8,39 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const hiddenOn = ["sign-in", "sign-up", "recover"];
+const hiddenOn = ["sign-in", "sign-up", "recover", "payout"];
+
+const { width: SW, height: SH } = Dimensions.get("window");
+const FW = Math.min(SW, SH * (390 / 844));
+
+const ACTIVE = "#e76d8a";
+const INACTIVE = "#f8e9e5";
+
+type IconDef = (color: string) => ReactElement;
+
+const icons: Record<string, IconDef> = {
+  index: (c) => <Ionicons name="home-outline" size={20} color={c} />,
+  menu: (c) => <Ionicons name="trash-outline" size={20} color={c} />,
+  orders: (c) => <Ionicons name="bag-handle-outline" size={20} color={c} />,
+  history: (c) => <MaterialIcons name="history" size={22} color={c} />,
+  profile: (c) => <Ionicons name="settings-outline" size={20} color={c} />,
+};
 
 export default function TabBar({ state, descriptors }: any) {
   const router = useRouter();
-  const segments = useSegments();
-
-  // Extract the active route name
-  const current = segments[segments.length - 1];
-
-  const { width: SW, height: SH } = Dimensions.get("window");
-  const FW = Math.min(SW, SH * (390 / 844));
+  const insets = useSafeAreaInsets(); // hooks must come before any early return
+  const current = state.routes[state.index].name;
 
   if (hiddenOn.includes(current)) return null;
 
   return (
-    <View style={styles.wrapper}>
-      <View style={[styles.container, { width: FW * 0.9 }]}>
+    <View style={[styles.wrapper, { bottom: insets.bottom + 15 }]}>
+      <View style={styles.container}>
         {state.routes.map((route: any, index: number) => {
-          if (!icons[route.name]) return null;
+          const renderIcon = icons[route.name];
+          if (!renderIcon) return null;
 
           const isFocused = state.index === index;
 
@@ -41,26 +55,13 @@ export default function TabBar({ state, descriptors }: any) {
             <TouchableOpacity
               key={route.key}
               onPress={onPress}
+              activeOpacity={0.8}
               style={[styles.tab, isFocused && styles.activeTab]}
             >
-              <Ionicons
-                name={
-                  isFocused
-                    ? icons[route.name].focused
-                    : icons[route.name].unfocused
-                }
-                size={24}
-                color={isFocused ? "#e76d8a" : "#f8e9e5"}
-              />
+              {renderIcon(isFocused ? ACTIVE : INACTIVE)}
               {isFocused && (
-                <Text
-                  style={{
-                    color: "#e76d8a",
-                    fontFamily: "Poppins",
-                    fontSize: 13,
-                  }}
-                >
-                  {descriptors[route.key].options.title || route.name}
+                <Text style={styles.label}>
+                  {descriptors[route.key].options.title}
                 </Text>
               )}
             </TouchableOpacity>
@@ -71,34 +72,20 @@ export default function TabBar({ state, descriptors }: any) {
   );
 }
 
-const icons: Record<
-  string,
-  {
-    focused: keyof typeof Ionicons.glyphMap;
-    unfocused: keyof typeof Ionicons.glyphMap;
-  }
-> = {
-  index: { focused: "home", unfocused: "home-outline" },
-  menu: { focused: "fast-food", unfocused: "fast-food-outline" },
-  orders: { focused: "bag", unfocused: "bag-outline" },
-  history: { focused: "time", unfocused: "time-outline" },
-  profile: { focused: "person", unfocused: "person-outline" },
-};
-
 const styles = StyleSheet.create({
   wrapper: {
     position: "absolute",
-    bottom: 20,
     left: 0,
     right: 0,
     alignItems: "center",
   },
   container: {
+    width: FW - 20,
     flexDirection: "row",
-    backgroundColor: "#e76d8a",
+    backgroundColor: ACTIVE,
     borderRadius: 50,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
     alignItems: "center",
     justifyContent: "space-between",
     shadowColor: "#000",
@@ -111,14 +98,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     borderRadius: 50,
   },
   activeTab: {
-    backgroundColor: "#f8e9e5",
-    paddingHorizontal: 16,
+    backgroundColor: INACTIVE,
+    paddingHorizontal: 14,
     flexDirection: "row",
-    alignItems: "center",
     gap: 6,
+  },
+  label: {
+    color: ACTIVE,
+    fontFamily: "Poppins_600SemiBold",
+    fontSize: 12,
   },
 });

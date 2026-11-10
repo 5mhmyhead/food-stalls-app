@@ -1,7 +1,4 @@
-import { useRouter } from "expo-router";
-import { useState } from "react";
-import { Text } from "react-native";
-import { session } from "../auth";
+import { session } from "@/auth";
 import {
   AuthScreen,
   BottomDecor,
@@ -12,7 +9,10 @@ import {
   TopDecor,
   authStyles,
   bubble,
-} from "../components/AuthKit";
+} from "@/components/AuthKit";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { Text } from "react-native";
 
 export default function SignIn() {
   const router = useRouter();
@@ -57,14 +57,14 @@ export default function SignIn() {
         onChangeText={setPassword}
         secure
       />
-      <Text style={authStyles.forgot} onPress={() => router.push("/recover")}>
+      <Text style={authStyles.forgot} onPress={() => router.push("../recover")}>
         Forgot Password?
       </Text>
       <PrimaryButton title="Sign in" onPress={() => session.signIn()} />
       <FooterLink
         prefix="Don't have an account?"
         link="Sign up"
-        onPress={() => router.replace("/sign-up")}
+        onPress={() => router.replace("../sign-up")}
       />
     </AuthScreen>
   );

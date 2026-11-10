@@ -9,40 +9,66 @@ import {
   PillButton,
   u,
 } from "@/components/Ui";
+import { peso } from "@/data/products";
+import { openManage, todayLabel, useManageState } from "@/manageStore";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { Text, View } from "react-native";
 
-const stats = [
-  {
-    icon: "bar-chart",
-    tint: COLORS.soft,
-    label: "All Time Revenue",
-    value: "₱1245.50",
-  },
-  {
-    icon: "cash-outline",
-    tint: COLORS.soft,
-    label: "Today's Income",
-    value: "₱210.50",
-  },
-  {
-    icon: "person-circle-outline",
-    tint: COLORS.soft,
-    label: "Total Customers",
-    value: "145",
-  },
-  {
-    icon: "cart-outline",
-    tint: COLORS.purple,
-    label: "Products Sold",
-    value: "527",
-  },
-] as const;
+const BASE = { revenue: 1245.5, today: 210.5, customers: 145, sold: 527 };
 
-export default function Index() {
-  const router = useRouter();
+export default function Home() {
+  const { orders } = useManageState();
   const cardWidth = (FW - 44 * u - 12 * u) / 2;
+
+  const completed = orders.filter((o) => o.status === "Complete");
+  const today = todayLabel();
+
+  const revenue = BASE.revenue + completed.reduce((s, o) => s + o.price, 0);
+  const todayIncome =
+    BASE.today +
+    completed.filter((o) => o.date === today).reduce((s, o) => s + o.price, 0);
+  const customers = BASE.customers + completed.length;
+  const sold =
+    BASE.sold +
+    completed.reduce(
+      (s, o) => s + (o.items ?? []).reduce((n, i) => n + i.qty, 0),
+      0,
+    );
+
+  const tally: Record<string, number> = { "Matcha Tea": 125 };
+  completed.forEach((o) =>
+    (o.items ?? []).forEach((i) => {
+      tally[i.name] = (tally[i.name] ?? 0) + i.qty;
+    }),
+  );
+  const top = Object.entries(tally).sort((a, b) => b[1] - a[1])[0];
+
+  const stats = [
+    {
+      icon: "bar-chart",
+      tint: COLORS.soft,
+      label: "All Time Revenue",
+      value: peso(revenue),
+    },
+    {
+      icon: "cash-outline",
+      tint: COLORS.soft,
+      label: "Today's Income",
+      value: peso(todayIncome),
+    },
+    {
+      icon: "person-circle-outline",
+      tint: COLORS.soft,
+      label: "Total Customers",
+      value: String(customers),
+    },
+    {
+      icon: "cart-outline",
+      tint: COLORS.purple,
+      label: "Products Sold",
+      value: String(sold),
+    },
+  ] as const;
 
   return (
     <Page
@@ -71,16 +97,10 @@ export default function Index() {
         >
           Welcome back, Dave!
         </Text>
-        <View style={{ flexDirection: "row", gap: 10 * u }}>
-          <PillButton
-            title="Manage Orders"
-            onPress={() => router.navigate("/orders")}
-          />
-          <PillButton
-            title="View Profile"
-            variant="soft"
-            onPress={() => router.navigate("/profile")}
-          />
+        <View style={{ flexDirection: "row" }}>
+          <View style={{ width: 120 * u }}>
+            <PillButton title="Manage Orders" onPress={() => openManage()} />
+          </View>
         </View>
       </Card>
 
@@ -139,7 +159,7 @@ export default function Index() {
             marginTop: 4 * u,
           }}
         >
-          Matcha Tea - 125 sales this month
+          {top[0]} - {top[1]} sales this month
         </Text>
       </Card>
     </Page>

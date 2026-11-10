@@ -1,53 +1,42 @@
 import { COLORS, Card, F, IconBtn, Page, Thumb, u } from "@/components/Ui";
+import { peso } from "@/data/products";
+import { OrderStatus, useManageState } from "@/manageStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Text, View } from "react-native";
 
-const orders = [
+const look: Record<
+  OrderStatus,
   {
-    id: "#82923",
-    date: "October 12, 2026",
-    status: "Pending",
+    label: string;
+    color: string;
+    tint: string;
+    icon: keyof typeof Ionicons.glyphMap;
+  }
+> = {
+  Pending: {
+    label: "Pending",
     color: "#F08A9F",
     tint: "#F4A3B3",
     icon: "hourglass-outline",
-    price: "₱920.00",
-    photo: "#B8504F",
   },
-  {
-    id: "#45239",
-    date: "October 12, 2026",
-    status: "Cancelled",
+  Cancelled: {
+    label: "Cancelled",
     color: "#E8708C",
     tint: "#F4A3B3",
     icon: "close-circle-outline",
-    price: "₱220.00",
-    photo: "#D98A3D",
   },
-  {
-    id: "#09752",
-    date: "September 28, 2026",
-    status: "Completed",
+  Complete: {
+    label: "Completed",
     color: "#A99BD1",
     tint: "#B7A8DA",
     icon: "checkbox-outline",
-    price: "₱120.00",
-    photo: "#9DBE8A",
   },
-  {
-    id: "#09752",
-    date: "September 28, 2026",
-    status: "Completed",
-    color: "#A99BD1",
-    tint: "#B7A8DA",
-    icon: "checkbox-outline",
-    price: "₱180.00",
-    photo: "#9DBE8A",
-  },
-] as const;
+};
 
 export default function History() {
   const router = useRouter();
+  const { orders } = useManageState();
 
   return (
     <Page
@@ -60,33 +49,59 @@ export default function History() {
       right={<IconBtn name="menu" />}
     >
       <View style={{ gap: 12 * u }}>
-        {orders.map((o, i) => (
-          <Card key={i} style={{ padding: 12 * u }}>
-            <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
-            >
-              <View style={{ flexDirection: "row", gap: 10 * u }}>
-                <View
-                  style={{
-                    width: 34 * u,
-                    height: 34 * u,
-                    borderRadius: 10 * u,
-                    backgroundColor: o.tint,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Ionicons name={o.icon} size={19 * u} color={COLORS.navy} />
+        {orders.map((o) => {
+          const s = look[o.status];
+          return (
+            <Card key={o.id} style={{ padding: 12 * u }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <View style={{ flexDirection: "row", gap: 10 * u }}>
+                  <View
+                    style={{
+                      width: 34 * u,
+                      height: 34 * u,
+                      borderRadius: 10 * u,
+                      backgroundColor: s.tint,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Ionicons name={s.icon} size={19 * u} color={COLORS.navy} />
+                  </View>
+                  <View>
+                    <Text
+                      style={{
+                        fontFamily: F.semi,
+                        fontSize: 14 * u,
+                        color: COLORS.navy,
+                      }}
+                    >
+                      Order #{o.id}
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: F.reg,
+                        fontSize: 9.5 * u,
+                        color: COLORS.navy,
+                      }}
+                    >
+                      {o.date}
+                    </Text>
+                  </View>
                 </View>
-                <View>
+                <View style={{ alignItems: "flex-end" }}>
                   <Text
                     style={{
                       fontFamily: F.semi,
                       fontSize: 14 * u,
-                      color: COLORS.navy,
+                      color: s.color,
                     }}
                   >
-                    Order {o.id}
+                    {s.label}
                   </Text>
                   <Text
                     style={{
@@ -95,52 +110,32 @@ export default function History() {
                       color: COLORS.navy,
                     }}
                   >
-                    {o.date}
+                    Status
                   </Text>
                 </View>
               </View>
-              <View style={{ alignItems: "flex-end" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "flex-end",
+                  marginTop: 8 * u,
+                }}
+              >
+                <Thumb width={140 * u} height={58} color={o.color} />
                 <Text
                   style={{
-                    fontFamily: F.semi,
-                    fontSize: 14 * u,
-                    color: o.color,
-                  }}
-                >
-                  {o.status}
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: F.reg,
-                    fontSize: 9.5 * u,
+                    fontFamily: F.bold,
+                    fontSize: 22 * u,
                     color: COLORS.navy,
                   }}
                 >
-                  Status
+                  {peso(o.price)}
                 </Text>
               </View>
-            </View>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "flex-end",
-                marginTop: 8 * u,
-              }}
-            >
-              <Thumb width={140 * u} height={58} color={o.photo} />
-              <Text
-                style={{
-                  fontFamily: F.bold,
-                  fontSize: 22 * u,
-                  color: COLORS.navy,
-                }}
-              >
-                {o.price}
-              </Text>
-            </View>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </View>
     </Page>
   );

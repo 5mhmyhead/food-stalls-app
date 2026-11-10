@@ -60,7 +60,7 @@ export default function Profile() {
         />
         <View style={{ marginTop: 8 * u }}>
           <Heading size={28} center>
-            Adi De Vera
+            Dwyane Sido
           </Heading>
         </View>
         <Text

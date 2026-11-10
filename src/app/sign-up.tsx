@@ -1,6 +1,3 @@
-import { useRouter } from "expo-router";
-import { useState } from "react";
-import { Text } from "react-native";
 import {
   AuthScreen,
   BottomDecor,
@@ -11,7 +8,10 @@ import {
   TopDecor,
   authStyles,
   bubble,
-} from "../components/AuthKit";
+} from "@/components/AuthKit";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import { Text } from "react-native";
 
 export default function SignUp() {
   const router = useRouter();
@@ -70,12 +70,12 @@ export default function SignUp() {
       />
       <PrimaryButton
         title="Sign up"
-        onPress={() => router.replace("/sign-in")}
+        onPress={() => router.replace("../sign-in")}
       />
       <FooterLink
         prefix="Already have an account?"
         link="Sign in"
-        onPress={() => router.replace("/sign-in")}
+        onPress={() => router.replace("../sign-in")}
       />
     </AuthScreen>
   );
