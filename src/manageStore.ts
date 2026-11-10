@@ -1,0 +1,133 @@
+import { adjustStockMany } from "@/catalogStore";
+import { useSyncExternalStore } from "react";
+
+export type OrderStatus = "Pending" | "Complete" | "Cancelled";
+
+export type OrderItem = {
+  id: string;
+  name: string;
+  qty: number;
+  price: number;
+};
+
+export type ManagedOrder = {
+  id: string;
+  price: number;
+  date: string;
+  status: OrderStatus;
+  color: string;
+  mode?: string;
+  items?: OrderItem[];
+};
+
+type State = { open: boolean; orders: ManagedOrder[] };
+
+let state: State = {
+  open: false,
+  orders: [
+    {
+      id: "82923",
+      price: 920,
+      date: "October 12, 2026",
+      status: "Pending",
+      color: "#B8504F",
+    },
+    {
+      id: "45239",
+      price: 220,
+      date: "October 10, 2026",
+      status: "Pending",
+      color: "#D98A3D",
+    },
+    {
+      id: "09752",
+      price: 210,
+      date: "September 29, 2026",
+      status: "Pending",
+      color: "#9DBE8A",
+    },
+    {
+      id: "31876",
+      price: 180,
+      date: "September 27, 2026",
+      status: "Pending",
+      color: "#8B6B58",
+    },
+  ],
+};
+
+const listeners = new Set<() => void>();
+
+const set = (next: State) => {
+  state = next;
+  listeners.forEach((l) => l());
+};
+
+export function todayLabel() {
+  return new Date().toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+export function makeOrderId() {
+  let id = "";
+  do {
+    id = String(Math.floor(10000 + Math.random() * 89999));
+  } while (state.orders.some((o) => o.id === id));
+  return id;
+}
+
+export function openManage() {
+  set({ ...state, open: true });
+}
+
+export function closeManage() {
+  set({ ...state, open: false });
+}
+
+export function addOrder(input: {
+  id: string;
+  total: number;
+  mode: string;
+  color: string;
+  items: OrderItem[];
+}) {
+  adjustStockMany(input.items.map((i) => ({ id: i.id, delta: -i.qty })));
+  const order: ManagedOrder = {
+    id: input.id,
+    price: input.total,
+    date: todayLabel(),
+    status: "Pending",
+    color: input.color,
+    mode: input.mode,
+    items: input.items,
+  };
+  set({ ...state, orders: [order, ...state.orders] });
+}
+
+export function setOrderStatus(id: string, status: OrderStatus) {
+  const current = state.orders.find((o) => o.id === id);
+  if (!current || current.status === status) return;
+
+  if (status === "Cancelled" && current.items && current.items.length > 0) {
+    adjustStockMany(current.items.map((i) => ({ id: i.id, delta: i.qty })));
+  }
+
+  set({
+    ...state,
+    orders: state.orders.map((o) => (o.id === id ? { ...o, status } : o)),
+  });
+}
+
+export function useManageState() {
+  return useSyncExternalStore(
+    (cb) => {
+      listeners.add(cb);
+      return () => listeners.delete(cb);
+    },
+    () => state,
+    () => state,
+  );
+}
