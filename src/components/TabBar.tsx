@@ -21,16 +21,16 @@ const INACTIVE = "#f8e9e5";
 type IconDef = (color: string) => ReactElement;
 
 const icons: Record<string, IconDef> = {
-  index: (c) => <Ionicons name="home-outline" size={20} color={c} />,
+  home: (c) => <Ionicons name="home-outline" size={20} color={c} />,
   menu: (c) => <Ionicons name="trash-outline" size={20} color={c} />,
   orders: (c) => <Ionicons name="bag-handle-outline" size={20} color={c} />,
   history: (c) => <MaterialIcons name="history" size={22} color={c} />,
-  profile: (c) => <Ionicons name="settings-outline" size={20} color={c} />,
+  settings: (c) => <Ionicons name="settings-outline" size={20} color={c} />,
 };
 
 export default function TabBar({ state, descriptors }: any) {
   const router = useRouter();
-  const insets = useSafeAreaInsets(); // hooks must come before any early return
+  const insets = useSafeAreaInsets();
   const current = state.routes[state.index].name;
 
   if (hiddenOn.includes(current)) return null;
@@ -46,9 +46,7 @@ export default function TabBar({ state, descriptors }: any) {
 
           const onPress = () => {
             if (isFocused) return;
-            router.navigate(
-              route.name === "index" ? "/" : (`/${route.name}` as any),
-            );
+            router.navigate(`/${route.name}` as any);
           };
 
           return (

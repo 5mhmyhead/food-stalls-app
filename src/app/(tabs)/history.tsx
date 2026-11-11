@@ -45,7 +45,9 @@ export default function History() {
         { size: 130, top: -60, left: 100 },
         { size: 55, top: 40, left: 215 },
       ]}
-      left={<IconBtn name="arrow-back" onPress={() => router.navigate("/")} />}
+      left={
+        <IconBtn name="arrow-back" onPress={() => router.navigate("/home")} />
+      }
       right={<IconBtn name="menu" />}
     >
       <View style={{ gap: 12 * u }}>

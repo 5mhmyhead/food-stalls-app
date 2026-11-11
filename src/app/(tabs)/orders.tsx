@@ -1,4 +1,5 @@
 import { itemCount, useCatalog } from "@/catalogStore";
+import CategoryIcon from "@/components/CategoryIcon";
 import {
   COLORS,
   Card,
@@ -8,11 +9,13 @@ import {
   IconBtn,
   LabelBtn,
   Page,
+  PillButton,
   SearchBar,
   Thumb,
   u,
 } from "@/components/Ui";
 import { peso } from "@/data/products";
+import { openManage } from "@/manageStore";
 import { changeQty, selectProduct, useOrderState } from "@/orderStore";
 import { openPayout } from "@/payoutStore";
 import { Ionicons } from "@expo/vector-icons";
@@ -57,13 +60,12 @@ export default function Orders() {
           onPress={() => openPayout()}
         />
       }
-      right={
-        <>
-          <IconBtn name="notifications-outline" />
-          <IconBtn name="funnel-outline" />
-        </>
-      }
+      right={<IconBtn name="funnel-outline" />}
     >
+      <View style={{ flexDirection: "row", marginBottom: 12 * u }}>
+        <PillButton title="Manage Orders" onPress={() => openManage()} />
+      </View>
+
       <SearchBar
         placeholder="search for a meal..."
         value={query}
@@ -94,11 +96,7 @@ export default function Orders() {
                 justifyContent: "space-between",
               }}
             >
-              <Ionicons
-                name={c.icon as any}
-                size={22 * u}
-                color={COLORS.navy}
-              />
+              <CategoryIcon name={c.icon} size={32 * u} color={COLORS.navy} />
               <View>
                 <Heading size={26}>{c.name}</Heading>
                 <Text

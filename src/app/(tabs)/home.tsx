@@ -11,6 +11,7 @@ import {
 } from "@/components/Ui";
 import { peso } from "@/data/products";
 import { openManage, todayLabel, useManageState } from "@/manageStore";
+import { useSettings } from "@/settingsStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Text, View } from "react-native";
 
@@ -18,6 +19,7 @@ const BASE = { revenue: 1245.5, today: 210.5, customers: 145, sold: 527 };
 
 export default function Home() {
   const { orders } = useManageState();
+  const { username } = useSettings();
   const cardWidth = (FW - 44 * u - 12 * u) / 2;
 
   const completed = orders.filter((o) => o.status === "Complete");
@@ -95,7 +97,7 @@ export default function Home() {
             marginBottom: 14 * u,
           }}
         >
-          Welcome back, Dave!
+          Welcome back, {username}!
         </Text>
         <View style={{ flexDirection: "row" }}>
           <View style={{ width: 120 * u }}>

@@ -8,10 +8,16 @@ import {
 import ManageOrders from "@/components/ManageOrders";
 import PayoutScreen from "@/components/PayoutScreen";
 import ProductDetail from "@/components/ProductDetail";
+import {
+  AccountPage,
+  PreferencesPage,
+  SecurityPage,
+} from "@/components/SettingsPages";
 import TabBar from "@/components/TabBar";
 import { useManageState } from "@/manageStore";
 import { useOrderState } from "@/orderStore";
 import { usePayoutOpen } from "@/payoutStore";
+import { useSettings } from "@/settingsStore";
 import { Tabs } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
@@ -20,6 +26,7 @@ export default function TabsLayout() {
   const { selectedId } = useOrderState();
   const { open: manageOpen } = useManageState();
   const { screen } = useCatalog();
+  const { screen: settingsScreen } = useSettings();
 
   const showProducts = screen === "products" || screen === "item";
   const showCategories = screen === "categories" || screen === "category";
@@ -30,11 +37,11 @@ export default function TabsLayout() {
         screenOptions={{ headerShown: false }}
         tabBar={(props: any) => <TabBar {...props} />}
       >
-        <Tabs.Screen name="index" options={{ title: "Home" }} />
+        <Tabs.Screen name="home" options={{ title: "Home" }} />
         <Tabs.Screen name="menu" options={{ title: "Menu" }} />
         <Tabs.Screen name="orders" options={{ title: "Orders" }} />
         <Tabs.Screen name="history" options={{ title: "History" }} />
-        <Tabs.Screen name="profile" options={{ title: "Profile" }} />
+        <Tabs.Screen name="settings" options={{ title: "Settings" }} />
       </Tabs>
       {showProducts && (
         <View style={StyleSheet.absoluteFill}>
@@ -69,6 +76,21 @@ export default function TabsLayout() {
       {payoutOpen && (
         <View style={StyleSheet.absoluteFill}>
           <PayoutScreen />
+        </View>
+      )}
+      {settingsScreen === "account" && (
+        <View style={StyleSheet.absoluteFill}>
+          <AccountPage />
+        </View>
+      )}
+      {settingsScreen === "security" && (
+        <View style={StyleSheet.absoluteFill}>
+          <SecurityPage />
+        </View>
+      )}
+      {settingsScreen === "preferences" && (
+        <View style={StyleSheet.absoluteFill}>
+          <PreferencesPage />
         </View>
       )}
     </View>

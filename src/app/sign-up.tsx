@@ -68,14 +68,11 @@ export default function SignUp() {
         onChangeText={setConfirm}
         secure
       />
-      <PrimaryButton
-        title="Sign up"
-        onPress={() => router.replace("../sign-in")}
-      />
+      <PrimaryButton title="Sign up" onPress={() => router.replace("/")} />
       <FooterLink
         prefix="Already have an account?"
         link="Sign in"
-        onPress={() => router.replace("../sign-in")}
+        onPress={() => router.replace("/")}
       />
     </AuthScreen>
   );

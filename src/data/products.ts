@@ -1,3 +1,5 @@
+import { formatPrice } from "@/currency";
+
 export type Product = {
   id: string;
   name: string;
@@ -66,4 +68,4 @@ export const products: Product[] = [
   },
 ];
 
-export const peso = (n: number) => `₱${n.toFixed(2)}`;
+export const peso = (n: number) => formatPrice(n);

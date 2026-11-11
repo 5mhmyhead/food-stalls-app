@@ -65,12 +65,12 @@ export default function Recover() {
       />
       <PrimaryButton
         title="Reset Password"
-        onPress={() => router.replace("../sign-in")}
+        onPress={() => router.replace("/")}
       />
       <FooterLink
         prefix="Remember your credentials?"
         link="Log in"
-        onPress={() => router.replace("../sign-in")}
+        onPress={() => router.replace("/")}
       />
     </AuthScreen>
   );
