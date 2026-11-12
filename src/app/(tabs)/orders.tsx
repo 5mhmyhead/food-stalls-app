@@ -9,7 +9,6 @@ import {
   IconBtn,
   LabelBtn,
   Page,
-  PillButton,
   SearchBar,
   Thumb,
   u,
@@ -23,9 +22,9 @@ import { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 const stepBtn = {
-  height: 28 * u,
-  minWidth: 36 * u,
-  borderRadius: 14 * u,
+  height: 26 * u,
+  width: 48 * u,
+  borderRadius: 13 * u,
   backgroundColor: COLORS.pink,
   alignItems: "center" as const,
   justifyContent: "center" as const,
@@ -62,9 +61,28 @@ export default function Orders() {
       }
       right={<IconBtn name="funnel-outline" />}
     >
-      <View style={{ flexDirection: "row", marginBottom: 12 * u }}>
-        <PillButton title="Manage Orders" onPress={() => openManage()} />
-      </View>
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => openManage()}
+        style={{
+          backgroundColor: COLORS.pink,
+          borderRadius: 999,
+          height: 34 * u,
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 12 * u,
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: F.semi,
+            fontSize: 12 * u,
+            color: "#FFFFFF",
+          }}
+        >
+          Manage Orders
+        </Text>
+      </TouchableOpacity>
 
       <SearchBar
         placeholder="search for a meal..."
@@ -196,33 +214,40 @@ export default function Orders() {
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  gap: 8 * u,
+                  backgroundColor: "#FFFFFF",
+                  borderWidth: 1,
+                  borderColor: COLORS.pink,
+                  borderRadius: 999,
+                  padding: 3 * u,
                   marginTop: 8 * u,
-                  marginBottom: 4 * u,
-                  paddingHorizontal: 4 * u,
+                  marginBottom: 2 * u,
                 }}
               >
-                {n > 0 && (
+                {n > 0 ? (
                   <TouchableOpacity
                     style={stepBtn}
                     onPress={() => changeQty(p.id, -1)}
                   >
                     <Ionicons name="remove" size={16 * u} color="#FFFFFF" />
                   </TouchableOpacity>
+                ) : (
+                  <View style={{ width: stepBtn.width }} />
                 )}
+
                 <Text
                   style={{
+                    flex: 1,
                     fontFamily: F.semi,
                     fontSize: 13 * u,
                     color: COLORS.navy,
-                    minWidth: 16 * u,
                     textAlign: "center",
                   }}
                 >
                   {n}
                 </Text>
+
                 <TouchableOpacity
-                  style={[stepBtn, { flex: 1 }]}
+                  style={stepBtn}
                   onPress={() => changeQty(p.id, 1)}
                 >
                   <Ionicons name="add" size={16 * u} color="#FFFFFF" />
