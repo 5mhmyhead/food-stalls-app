@@ -1,3 +1,5 @@
+import { Ionicons } from "@expo/vector-icons";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import type { ReactElement } from "react";
@@ -38,10 +40,11 @@ export default function TabBar({ state, descriptors }: any) {
   return (
     <View style={[styles.wrapper, { bottom: insets.bottom + 15 }]}>
       <View style={styles.container}>
+        {state.routes.map((route: any, index: any) => {
         {state.routes.map((route: any, index: number) => {
           const renderIcon = icons[route.name];
           if (!renderIcon) return null;
-
+          
           const isFocused = state.index === index;
 
           const onPress = () => {
@@ -59,6 +62,13 @@ export default function TabBar({ state, descriptors }: any) {
               {renderIcon(isFocused ? ACTIVE : INACTIVE)}
               {isFocused && (
                 <Text style={styles.label}>
+                <Text
+                  style={{
+                    color: "#e76d8a",
+                    fontFamily: "Poppins",
+                    fontSize: 13,
+                  }}
+                >
                   {descriptors[route.key].options.title}
                 </Text>
               )}
@@ -73,6 +83,42 @@ export default function TabBar({ state, descriptors }: any) {
 const styles = StyleSheet.create({
   wrapper: {
     position: "absolute",
+    wrapper: {
+        position: "absolute",
+        bottom: 20,
+        left: 20,
+        right: 20,
+    },
+    container: {
+        flexDirection: "row",
+        backgroundColor: "#e76d8a",
+        borderRadius: 50,
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        alignItems: "center",
+        justifyContent: "space-between",
+
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 10,
+        elevation: 8,
+    },
+    tab: {
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 50,
+    },
+    activeTab: {
+        backgroundColor: "#f8e9e5",
+        paddingHorizontal: 16,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+    },
+});
     left: 0,
     right: 0,
     alignItems: "center",
