@@ -192,7 +192,7 @@ export function EditCategories() {
       <View style={{ gap: 12 * u, marginTop: 16 * u }}>
         {categories.map((c) => {
           const row = (
-            <Card selected={c.id === "all"} style={{ padding: 12 * u }}>
+            <Card style={{ padding: 12 * u }}>
               <View
                 style={{
                   flexDirection: "row",
@@ -260,12 +260,13 @@ export function EditCategories() {
 export function EditItem() {
   const { products, categories, editingId } = useCatalog();
   const existing = products.find((p) => p.id === editingId);
-  const choices = categories.filter((c) => c.id !== "all");
+  const custom = categories.filter((c) => c.id !== "all");
+  const choices = custom.length > 0 ? custom : categories;
 
   const [name, setName] = useState(existing?.name ?? "");
   const [description, setDescription] = useState(existing?.description ?? "");
   const [category, setCategory] = useState(
-    existing?.category ?? choices[0]?.name ?? "",
+    existing?.category ?? choices[0]?.name ?? "All Meals",
   );
   const [price, setPrice] = useState(existing ? String(existing.price) : "");
   const [stock, setStock] = useState(existing ? String(existing.stock) : "");

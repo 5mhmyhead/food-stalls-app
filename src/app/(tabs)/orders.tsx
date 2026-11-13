@@ -61,6 +61,12 @@ export default function Orders() {
       }
       right={<IconBtn name="funnel-outline" />}
     >
+      <SearchBar
+        placeholder="search for a meal..."
+        value={query}
+        onChangeText={setQuery}
+      />
+
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={() => openManage()}
@@ -70,7 +76,7 @@ export default function Orders() {
           height: 34 * u,
           alignItems: "center",
           justifyContent: "center",
-          marginBottom: 12 * u,
+          marginTop: 12 * u,
         }}
       >
         <Text
@@ -83,12 +89,6 @@ export default function Orders() {
           Manage Orders
         </Text>
       </TouchableOpacity>
-
-      <SearchBar
-        placeholder="search for a meal..."
-        value={query}
-        onChangeText={setQuery}
-      />
 
       <ScrollView
         horizontal
@@ -132,7 +132,7 @@ export default function Orders() {
         ))}
       </ScrollView>
 
-      {shown.length === 0 && (
+      {q !== "" && shown.length === 0 && (
         <Text
           style={{
             fontFamily: F.reg,

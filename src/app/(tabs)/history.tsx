@@ -50,6 +50,20 @@ export default function History() {
       }
       right={<IconBtn name="menu" />}
     >
+      {orders.length === 0 ? (
+        <Text
+          style={{
+            fontFamily: F.reg,
+            fontSize: 13 * u,
+            color: COLORS.navy,
+            textAlign: "center",
+            marginTop: 40 * u,
+          }}
+        >
+          No orders available
+        </Text>
+      ) : null}
+
       <View style={{ gap: 12 * u }}>
         {orders.map((o) => {
           const s = look[o.status];

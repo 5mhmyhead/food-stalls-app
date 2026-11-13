@@ -6,16 +6,13 @@ import {
   Heading,
   IconBtn,
   Page,
-  PillButton,
   u,
 } from "@/components/Ui";
 import { peso } from "@/data/products";
-import { openManage, todayLabel, useManageState } from "@/manageStore";
+import { todayLabel, useManageState } from "@/manageStore";
 import { useSettings } from "@/settingsStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Text, View } from "react-native";
-
-const BASE = { revenue: 1245.5, today: 210.5, customers: 145, sold: 527 };
 
 export default function Home() {
   const { orders } = useManageState();
@@ -25,19 +22,17 @@ export default function Home() {
   const completed = orders.filter((o) => o.status === "Complete");
   const today = todayLabel();
 
-  const revenue = BASE.revenue + completed.reduce((s, o) => s + o.price, 0);
-  const todayIncome =
-    BASE.today +
-    completed.filter((o) => o.date === today).reduce((s, o) => s + o.price, 0);
-  const customers = BASE.customers + completed.length;
-  const sold =
-    BASE.sold +
-    completed.reduce(
-      (s, o) => s + (o.items ?? []).reduce((n, i) => n + i.qty, 0),
-      0,
-    );
+  const revenue = completed.reduce((sum, o) => sum + o.price, 0);
+  const todayIncome = completed
+    .filter((o) => o.date === today)
+    .reduce((sum, o) => sum + o.price, 0);
+  const customers = completed.length;
+  const sold = completed.reduce(
+    (sum, o) => sum + (o.items ?? []).reduce((n, i) => n + i.qty, 0),
+    0,
+  );
 
-  const tally: Record<string, number> = { "Matcha Tea": 125 };
+  const tally: Record<string, number> = {};
   completed.forEach((o) =>
     (o.items ?? []).forEach((i) => {
       tally[i.name] = (tally[i.name] ?? 0) + i.qty;
@@ -94,16 +89,10 @@ export default function Home() {
             fontSize: 14 * u,
             color: COLORS.navy,
             marginTop: 2 * u,
-            marginBottom: 14 * u,
           }}
         >
           Welcome back, {username}!
         </Text>
-        <View style={{ flexDirection: "row" }}>
-          <View style={{ width: 120 * u }}>
-            <PillButton title="Manage Orders" onPress={() => openManage()} />
-          </View>
-        </View>
       </Card>
 
       <View
@@ -161,7 +150,7 @@ export default function Home() {
             marginTop: 4 * u,
           }}
         >
-          {top[0]} - {top[1]} sales this month
+          {top ? `${top[0]} - ${top[1]} sold` : "No sales yet"}
         </Text>
       </Card>
     </Page>

@@ -1,13 +1,13 @@
 import { useCatalog } from "@/catalogStore";
 import {
-    COLORS,
-    Card,
-    F,
-    Heading,
-    IconBtn,
-    Page,
-    PillButton,
-    u,
+  COLORS,
+  Card,
+  F,
+  Heading,
+  IconBtn,
+  Page,
+  PillButton,
+  u,
 } from "@/components/Ui";
 import { peso } from "@/data/products";
 import { addOrder, makeOrderId, todayLabel } from "@/manageStore";
@@ -53,7 +53,7 @@ export default function PayoutScreen() {
     });
     clearCart();
     closePayout();
-    router.navigate("/history");
+    router.navigate("/orders");
   };
 
   return (

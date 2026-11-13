@@ -18,6 +18,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
+import Kitty from "../../assets/icons/kitty.svg";
 
 const { width: SW, height: SH } = Dimensions.get("window");
 const FW = Math.min(SW, SH * (390 / 844));
@@ -113,13 +114,7 @@ export function BottomDecor({
 export function CatLogo() {
   return (
     <View style={styles.logo}>
-      <View style={[styles.ear, { left: 3 * u }]} />
-      <View style={[styles.ear, { right: 3 * u }]} />
-      <View style={styles.head} />
-      <View style={[styles.whisker, { left: -7 * u, top: 26 * u }]} />
-      <View style={[styles.whisker, { left: -7 * u, top: 32 * u }]} />
-      <View style={[styles.whisker, { right: -7 * u, top: 26 * u }]} />
-      <View style={[styles.whisker, { right: -7 * u, top: 32 * u }]} />
+      <Kitty width="100%" height="100%" color={COLORS.navy} />
     </View>
   );
 }
@@ -281,31 +276,9 @@ const styles = StyleSheet.create({
   form: { width: 242 * u, alignItems: "stretch" },
   logo: {
     alignSelf: "center",
-    width: 58 * u,
-    height: 44 * u,
+    width: 64 * u,
+    height: 50 * u,
     marginBottom: 6 * u,
-  },
-  head: {
-    position: "absolute",
-    bottom: 0,
-    width: 58 * u,
-    height: 34 * u,
-    borderRadius: 17 * u,
-    backgroundColor: COLORS.navy,
-  },
-  ear: {
-    position: "absolute",
-    top: 0,
-    width: 15 * u,
-    height: 15 * u,
-    borderRadius: 4 * u,
-    backgroundColor: COLORS.navy,
-  },
-  whisker: {
-    position: "absolute",
-    width: 12 * u,
-    height: 1.5 * u,
-    backgroundColor: COLORS.navy,
   },
   fieldWrap: { marginBottom: 12 * u },
   label: {

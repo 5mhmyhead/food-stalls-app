@@ -30,8 +30,6 @@ let state: State = {
   products: seed,
   categories: [
     { id: "all", name: "All Meals", icon: "utensils", color: "#F4A5A8" },
-    { id: "breakfast", name: "Breakfast", icon: "croissant", color: "#EE8CA5" },
-    { id: "drinks", name: "Drinks", icon: "cups", color: "#F2A9C0" },
   ],
   screen: null,
   editingId: null,

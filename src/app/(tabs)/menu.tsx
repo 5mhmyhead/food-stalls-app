@@ -113,7 +113,7 @@ export default function Menu() {
       </ScrollView>
 
       <View style={{ marginTop: 16 * u, gap: 12 * u }}>
-        {shown.length === 0 && (
+        {q !== "" && shown.length === 0 && (
           <Text
             style={{
               fontFamily: F.reg,
