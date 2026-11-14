@@ -15,8 +15,8 @@ import { buildCart, clearCart, setQty, useOrderState } from "@/orderStore";
 import { closePayout } from "@/payoutStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Text, TouchableOpacity, View } from "react-native";
 
 const modes = ["Dine In", "Take Out", "Delivery"];
 
@@ -27,6 +27,21 @@ export default function PayoutScreen() {
   const [mode, setMode] = useState("Dine In");
   const [orderId] = useState(() => makeOrderId());
   const date = todayLabel();
+
+  // sliding pill for the mode selector
+  const [trackW, setTrackW] = useState(0);
+  const slide = useRef(new Animated.Value(0)).current;
+  const tabW = trackW / modes.length;
+
+  useEffect(() => {
+    if (!tabW) return;
+    Animated.spring(slide, {
+      toValue: modes.indexOf(mode) * tabW,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 70,
+    }).start();
+  }, [mode, tabW]);
 
   const lines = useMemo(() => buildCart(qty, products), [qty, products]);
   const subtotal = lines.reduce(
@@ -68,7 +83,6 @@ export default function PayoutScreen() {
     >
       <View
         style={{
-          flexDirection: "row",
           backgroundColor: COLORS.card,
           borderRadius: 14 * u,
           borderWidth: 1,
@@ -76,34 +90,53 @@ export default function PayoutScreen() {
           padding: 4 * u,
         }}
       >
-        {modes.map((m) => {
-          const active = m === mode;
-          return (
-            <TouchableOpacity
-              key={m}
-              onPress={() => setMode(m)}
-              activeOpacity={0.85}
+        <View
+          style={{ flexDirection: "row" }}
+          onLayout={(e) => setTrackW(e.nativeEvent.layout.width)}
+        >
+          {/* sliding pill */}
+          {trackW > 0 && (
+            <Animated.View
               style={{
-                flex: 1,
-                height: 32 * u,
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                left: 0,
+                width: tabW,
                 borderRadius: 11 * u,
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: active ? COLORS.pink : "transparent",
+                backgroundColor: COLORS.pink,
+                transform: [{ translateX: slide }],
               }}
-            >
-              <Text
+            />
+          )}
+
+          {modes.map((m) => {
+            const active = m === mode;
+            return (
+              <TouchableOpacity
+                key={m}
+                onPress={() => setMode(m)}
+                activeOpacity={0.85}
                 style={{
-                  fontFamily: F.semi,
-                  fontSize: 12.5 * u,
-                  color: active ? "#FFFFFF" : COLORS.navy,
+                  flex: 1,
+                  height: 32 * u,
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                {m}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+                <Text
+                  style={{
+                    fontFamily: F.semi,
+                    fontSize: 12.5 * u,
+                    color: active ? "#FFFFFF" : COLORS.navy,
+                  }}
+                >
+                  {m}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
       <Card style={{ marginTop: 12 * u, padding: 12 * u }}>

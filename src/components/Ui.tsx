@@ -27,7 +27,7 @@ export const FW = Math.min(SW, SH * (390 / 844));
 export const u = FW / 390;
 
 export const COLORS = {
-  bg: "#F9E8E2",
+  bg: "#FFFFFF",
   pink: "#E8708C",
   soft: "#F4A3B3",
   navy: "#243759",

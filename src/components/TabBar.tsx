@@ -41,7 +41,7 @@ const { width: SW, height: SH } = Dimensions.get("window");
 const FW = Math.min(SW, SH * (390 / 844));
 
 const ACTIVE = "#e76d8a";
-const INACTIVE = "#f8e9e5";
+const INACTIVE = "#FFFFFF";
 const FOCUS_BOOST = 1;
 const native = Platform.OS !== "web";
 

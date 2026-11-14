@@ -26,7 +26,7 @@ type State = {
 
 const initial: State = {
   screen: null,
-  role: "employee",
+  role: "admin",
   username: "Dave",
   email: "",
   password: null,
