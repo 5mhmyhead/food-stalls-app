@@ -20,40 +20,20 @@ export type ManagedOrder = {
   items?: OrderItem[];
 };
 
-type State = { open: boolean; orders: ManagedOrder[] };
+export type NoticeScope = "auth" | "app";
+
+export type Notice = { text: string; id: number; scope: NoticeScope };
+
+type State = {
+  open: boolean;
+  orders: ManagedOrder[];
+  notice: Notice | null;
+};
 
 let state: State = {
   open: false,
-  orders: [
-    {
-      id: "82923",
-      price: 920,
-      date: "October 12, 2026",
-      status: "Pending",
-      color: "#B8504F",
-    },
-    {
-      id: "45239",
-      price: 220,
-      date: "October 10, 2026",
-      status: "Pending",
-      color: "#D98A3D",
-    },
-    {
-      id: "09752",
-      price: 210,
-      date: "September 29, 2026",
-      status: "Pending",
-      color: "#9DBE8A",
-    },
-    {
-      id: "31876",
-      price: 180,
-      date: "September 27, 2026",
-      status: "Pending",
-      color: "#8B6B58",
-    },
-  ],
+  orders: [],
+  notice: null,
 };
 
 const listeners = new Set<() => void>();
@@ -87,6 +67,14 @@ export function closeManage() {
   set({ ...state, open: false });
 }
 
+export function showNotice(text: string, scope: NoticeScope = "app") {
+  set({ ...state, notice: { text, id: Date.now(), scope } });
+}
+
+export function clearNotice() {
+  set({ ...state, notice: null });
+}
+
 export function addOrder(input: {
   id: string;
   total: number;
@@ -104,7 +92,15 @@ export function addOrder(input: {
     mode: input.mode,
     items: input.items,
   };
-  set({ ...state, orders: [order, ...state.orders] });
+  set({
+    ...state,
+    orders: [order, ...state.orders],
+    notice: {
+      text: `Order #${input.id}\nPlaced!`,
+      id: Date.now(),
+      scope: "app",
+    },
+  });
 }
 
 export function setOrderStatus(id: string, status: OrderStatus) {

@@ -1,19 +1,19 @@
 import {
-  COLORS,
-  Card,
-  F,
-  Heading,
-  IconBtn,
-  Page,
-  Thumb,
-  u,
+    COLORS,
+    Card,
+    F,
+    Heading,
+    IconBtn,
+    Page,
+    Thumb,
+    u,
 } from "@/components/Ui";
 import { peso } from "@/data/products";
 import {
-  OrderStatus,
-  closeManage,
-  setOrderStatus,
-  useManageState,
+    OrderStatus,
+    closeManage,
+    setOrderStatus,
+    useManageState,
 } from "@/manageStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";

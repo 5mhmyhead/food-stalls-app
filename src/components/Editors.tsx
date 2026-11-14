@@ -1,38 +1,54 @@
 import {
-    deleteCategory,
-    deleteProduct,
-    goBack,
-    itemCount,
-    openScreen,
-    saveCategory,
-    saveProduct,
-    useCatalog,
+  deleteCategory,
+  deleteProduct,
+  goBack,
+  itemCount,
+  openScreen,
+  saveCategory,
+  saveProduct,
+  useCatalog,
 } from "@/catalogStore";
+import CategoryIcon from "@/components/CategoryIcon";
 import {
-    COLORS,
-    Card,
-    F,
-    Heading,
-    IconBtn,
-    Page,
-    PillButton,
-    Thumb,
-    u,
+  COLORS,
+  Card,
+  F,
+  FW,
+  Heading,
+  IconBtn,
+  Page,
+  PillButton,
+  Thumb,
+  u,
 } from "@/components/Ui";
 import { peso } from "@/data/products";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const bubbles = [
   { size: 130, top: -65, left: 100 },
   { size: 55, top: 30, left: 215 },
+];
+
+const ICONS = [
+  "croissant",
+  "utensils",
+  "knife",
+  "cups",
+  "burgers",
+  "bbq",
+  "coffee",
+  "bowl",
+  "fish",
+  "crescent",
 ];
 
 function Input({
@@ -174,12 +190,8 @@ export function EditCategories() {
       </Card>
 
       <View style={{ gap: 12 * u, marginTop: 16 * u }}>
-        {categories.map((c) => (
-          <TouchableOpacity
-            key={c.id}
-            activeOpacity={0.85}
-            onPress={() => openScreen("category", c.id)}
-          >
+        {categories.map((c) => {
+          const row = (
             <Card style={{ padding: 12 * u }}>
               <View
                 style={{
@@ -190,17 +202,17 @@ export function EditCategories() {
               >
                 <View
                   style={{
-                    width: 40 * u,
-                    height: 40 * u,
-                    borderRadius: 20 * u,
+                    width: 46 * u,
+                    height: 46 * u,
+                    borderRadius: 23 * u,
                     backgroundColor: c.color,
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
-                  <Ionicons
-                    name={c.icon as any}
-                    size={20 * u}
+                  <CategoryIcon
+                    name={c.icon}
+                    size={26 * u}
                     color={COLORS.navy}
                   />
                 </View>
@@ -226,8 +238,20 @@ export function EditCategories() {
                 </View>
               </View>
             </Card>
-          </TouchableOpacity>
-        ))}
+          );
+
+          if (c.id === "all") return <View key={c.id}>{row}</View>;
+
+          return (
+            <TouchableOpacity
+              key={c.id}
+              activeOpacity={0.85}
+              onPress={() => openScreen("category", c.id)}
+            >
+              {row}
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </Page>
   );
@@ -236,12 +260,13 @@ export function EditCategories() {
 export function EditItem() {
   const { products, categories, editingId } = useCatalog();
   const existing = products.find((p) => p.id === editingId);
-  const choices = categories.filter((c) => c.id !== "all");
+  const custom = categories.filter((c) => c.id !== "all");
+  const choices = custom.length > 0 ? custom : categories;
 
   const [name, setName] = useState(existing?.name ?? "");
   const [description, setDescription] = useState(existing?.description ?? "");
   const [category, setCategory] = useState(
-    existing?.category ?? choices[0]?.name ?? "",
+    existing?.category ?? choices[0]?.name ?? "All Meals",
   );
   const [price, setPrice] = useState(existing ? String(existing.price) : "");
   const [stock, setStock] = useState(existing ? String(existing.stock) : "");
@@ -339,7 +364,7 @@ export function EditItem() {
               onPress={() => setCategory(c.name)}
               style={{
                 width: 110 * u,
-                height: 78 * u,
+                height: 84 * u,
                 borderRadius: 14 * u,
                 backgroundColor: c.color,
                 borderWidth: active ? 1.5 : 1,
@@ -348,11 +373,7 @@ export function EditItem() {
                 justifyContent: "space-between",
               }}
             >
-              <Ionicons
-                name={c.icon as any}
-                size={16 * u}
-                color={COLORS.navy}
-              />
+              <CategoryIcon name={c.icon} size={22 * u} color={COLORS.navy} />
               <Heading size={18}>{c.name}</Heading>
             </TouchableOpacity>
           );
@@ -394,83 +415,225 @@ export function CategoryForm() {
   const { products, categories, editingId } = useCatalog();
   const existing = categories.find((c) => c.id === editingId);
   const [name, setName] = useState(existing?.name ?? "");
-  const builtIn = existing?.id === "all";
+  const [icon, setIcon] = useState<string>(existing?.icon ?? ICONS[0]);
+  const [showIcons, setShowIcons] = useState(false);
+  const [message, setMessage] = useState("");
+
   const count = existing ? itemCount(products, existing) : 0;
+  const ready = name.trim().length > 0;
 
   const onSave = () => {
-    if (!name.trim()) return;
-    saveCategory(existing ? existing.id : null, name.trim());
+    const error = saveCategory(existing ? existing.id : null, name, icon);
+    if (error) {
+      setMessage(error);
+      return;
+    }
+    goBack();
+  };
+
+  const onDelete = () => {
+    if (!existing) return;
+    deleteCategory(existing.id);
     goBack();
   };
 
   return (
-    <Page
-      headerHeight={100}
-      bubbles={bubbles}
-      left={<IconBtn name="arrow-back" onPress={goBack} />}
+    <View
+      style={[
+        StyleSheet.absoluteFill,
+        {
+          backgroundColor: "rgba(0,0,0,0.45)",
+          alignItems: "center",
+          justifyContent: "center",
+        },
+      ]}
     >
-      <Card style={{ padding: 16 * u }}>
-        <Heading size={28}>
+      <TouchableOpacity
+        activeOpacity={1}
+        onPress={goBack}
+        style={StyleSheet.absoluteFill}
+      />
+
+      <View
+        style={{
+          width: FW - 36 * u,
+          backgroundColor: COLORS.card,
+          borderRadius: 18 * u,
+          borderWidth: 1,
+          borderColor: COLORS.border,
+          padding: 16 * u,
+        }}
+      >
+        <Heading size={30}>
           {existing ? "Edit Category" : "New Category"}
         </Heading>
-        <View style={{ marginTop: 12 * u }}>
-          {builtIn ? (
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-end",
+            gap: 12,
+            marginTop: 12,
+          }}
+        >
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setShowIcons(!showIcons)}
+            style={{
+              width: 50,
+              height: 50,
+              borderRadius: 12,
+              backgroundColor: COLORS.cream,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <CategoryIcon name={icon} size={32} color="#243759" />
+            <View
+              style={{
+                position: "absolute",
+                right: -4,
+                bottom: -4,
+                width: 16,
+                height: 16,
+                borderRadius: 8,
+                backgroundColor: "#243759",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Ionicons name="pencil" size={9} color="#FFFFFF" />
+            </View>
+          </TouchableOpacity>
+
+          <View style={{ flex: 1 }}>
             <Text
               style={{
                 fontFamily: F.reg,
-                fontSize: 11 * u,
-                color: COLORS.navy,
+                fontSize: 11,
+                color: "#243759",
+                marginBottom: 4,
               }}
             >
-              All Meals is built in and always shows every product.
+              Name
             </Text>
-          ) : (
-            <Input
-              placeholder="Category Name"
+            <TextInput
               value={name}
-              onChangeText={setName}
+              onChangeText={(t) => {
+                setName(t);
+                setMessage("");
+              }}
+              autoCorrect={false}
+              selectionColor="#E8708C"
+              style={{
+                height: 34,
+                borderRadius: 8,
+                backgroundColor: COLORS.cream,
+                paddingHorizontal: 10,
+                paddingVertical: 0,
+                fontFamily: F.reg,
+                fontSize: 13,
+                color: "#243759",
+              }}
             />
-          )}
+          </View>
         </View>
 
-        {!builtIn && (
+        {showIcons ? (
           <View
             style={{
               flexDirection: "row",
-              marginTop: 14 * u,
-              opacity: name.trim() ? 1 : 0.5,
+              flexWrap: "wrap",
+              gap: 8,
+              marginTop: 12,
+              padding: 8,
+              borderRadius: 10,
+              backgroundColor: COLORS.cream,
             }}
           >
-            <PillButton title="Save Category" onPress={onSave} />
+            {ICONS.map((iconName) => {
+              const active = iconName === icon;
+              return (
+                <TouchableOpacity
+                  key={iconName}
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    setIcon(iconName);
+                    setShowIcons(false);
+                  }}
+                  style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: 10,
+                    borderWidth: active ? 1.5 : 1,
+                    borderColor: active ? COLORS.pink : COLORS.border,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <CategoryIcon name={iconName} size={26} color="#243759" />
+                </TouchableOpacity>
+              );
+            })}
           </View>
-        )}
+        ) : null}
 
-        {existing && !builtIn && count === 0 && (
-          <View style={{ flexDirection: "row", marginTop: 10 * u }}>
-            <PillButton
-              title="Delete Category"
-              variant="navy"
-              onPress={() => {
-                deleteCategory(existing.id);
-                goBack();
-              }}
-            />
-          </View>
-        )}
-
-        {existing && !builtIn && count > 0 && (
+        {message ? (
           <Text
             style={{
               fontFamily: F.reg,
-              fontSize: 10 * u,
-              color: COLORS.navy,
-              marginTop: 10 * u,
+              fontSize: 11,
+              color: "#E8708C",
+              marginTop: 8,
+            }}
+          >
+            {message}
+          </Text>
+        ) : null}
+
+        {existing && count === 0 ? (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={onDelete}
+            style={{ marginTop: 10 }}
+          >
+            <Text
+              style={{
+                fontFamily: F.semi,
+                fontSize: 11,
+                color: "#E8708C",
+                textDecorationLine: "underline",
+              }}
+            >
+              Delete Category
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {existing && count > 0 ? (
+          <Text
+            style={{
+              fontFamily: F.reg,
+              fontSize: 10,
+              color: "#243759",
+              marginTop: 10,
             }}
           >
             This category has {count} items. Move or delete them to remove it.
           </Text>
-        )}
-      </Card>
-    </Page>
+        ) : null}
+
+        <View style={{ flexDirection: "row", gap: 12 * u, marginTop: 16 * u }}>
+          <View style={{ flex: 1, flexDirection: "row" }}>
+            <PillButton title="Cancel" variant="navy" onPress={goBack} />
+          </View>
+          <View
+            style={{ flex: 1, flexDirection: "row", opacity: ready ? 1 : 0.5 }}
+          >
+            <PillButton title="Save" onPress={onSave} />
+          </View>
+        </View>
+      </View>
+    </View>
   );
 }

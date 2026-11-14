@@ -1,4 +1,5 @@
 import { itemCount, openScreen, useCatalog } from "@/catalogStore";
+import CategoryIcon from "@/components/CategoryIcon";
 import {
   COLORS,
   Card,
@@ -13,9 +14,7 @@ import {
   u,
 } from "@/components/Ui";
 import { peso } from "@/data/products";
-import { selectProduct } from "@/orderStore";
 import { openPayout } from "@/payoutStore";
-import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
@@ -95,11 +94,7 @@ export default function Menu() {
                 justifyContent: "space-between",
               }}
             >
-              <Ionicons
-                name={c.icon as any}
-                size={22 * u}
-                color={COLORS.navy}
-              />
+              <CategoryIcon name={c.icon} size={32 * u} color={COLORS.navy} />
               <View>
                 <Heading size={26}>{c.name}</Heading>
                 <Text
@@ -118,7 +113,7 @@ export default function Menu() {
       </ScrollView>
 
       <View style={{ marginTop: 16 * u, gap: 12 * u }}>
-        {shown.length === 0 && (
+        {q !== "" && shown.length === 0 && (
           <Text
             style={{
               fontFamily: F.reg,
@@ -133,53 +128,43 @@ export default function Menu() {
         )}
 
         {shown.map((p) => (
-          <TouchableOpacity
-            key={p.id}
-            activeOpacity={0.85}
-            onPress={() => selectProduct(p.id)}
-          >
-            <Card style={{ padding: 8 * u }}>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Thumb width={140 * u} height={90} color={p.color} />
-                <View
+          <Card key={p.id} style={{ padding: 8 * u }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Thumb width={140 * u} height={90} color={p.color} />
+              <View
+                style={{ flex: 1, alignItems: "flex-end", paddingRight: 6 * u }}
+              >
+                <Text
                   style={{
-                    flex: 1,
-                    alignItems: "flex-end",
-                    paddingRight: 6 * u,
+                    fontFamily: F.semi,
+                    fontSize: 15 * u,
+                    color: COLORS.navy,
                   }}
                 >
-                  <Text
-                    style={{
-                      fontFamily: F.semi,
-                      fontSize: 15 * u,
-                      color: COLORS.navy,
-                    }}
-                  >
-                    {p.name}
-                  </Text>
-                  <Text
-                    style={{
-                      fontFamily: F.reg,
-                      fontSize: 9.5 * u,
-                      color: COLORS.navy,
-                    }}
-                  >
-                    {p.category}
-                  </Text>
-                  <Text
-                    style={{
-                      fontFamily: F.bold,
-                      fontSize: 22 * u,
-                      color: COLORS.navy,
-                      marginTop: 14 * u,
-                    }}
-                  >
-                    {peso(p.price)}
-                  </Text>
-                </View>
+                  {p.name}
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: F.reg,
+                    fontSize: 9.5 * u,
+                    color: COLORS.navy,
+                  }}
+                >
+                  {p.category}
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: F.bold,
+                    fontSize: 22 * u,
+                    color: COLORS.navy,
+                    marginTop: 14 * u,
+                  }}
+                >
+                  {peso(p.price)}
+                </Text>
               </View>
-            </Card>
-          </TouchableOpacity>
+            </View>
+          </Card>
         ))}
       </View>
     </Page>

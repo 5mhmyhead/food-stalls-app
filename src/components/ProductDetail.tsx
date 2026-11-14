@@ -12,19 +12,25 @@ import {
 } from "@/components/Ui";
 import { peso } from "@/data/products";
 import { changeQty, closeProduct, setQty, useOrderState } from "@/orderStore";
+import { useSettings } from "@/settingsStore";
 import { Text, TouchableOpacity, View } from "react-native";
 
 export default function ProductDetail() {
   const { selectedId, qty } = useOrderState();
   const { products } = useCatalog();
+  const { threshold } = useSettings();
   const product = products.find((p) => p.id === selectedId);
 
   if (!product) return null;
 
   const n = qty[product.id] ?? 0;
+  const low = product.available && product.stock <= threshold;
 
   const chips = [
-    { value: product.available ? "Available" : "Sold out", label: "Status" },
+    {
+      value: !product.available ? "Sold out" : low ? "Low stock" : "Available",
+      label: "Status",
+    },
     { value: String(product.stock), label: "Stock" },
     { value: product.discount, label: "Discount" },
   ];

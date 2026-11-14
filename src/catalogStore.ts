@@ -29,19 +29,7 @@ const tints = ["#F4A5A8", "#EE8CA5", "#F2A9C0", "#B7A8DA"];
 let state: State = {
   products: seed,
   categories: [
-    {
-      id: "all",
-      name: "All Meals",
-      icon: "restaurant-outline",
-      color: "#F4A5A8",
-    },
-    {
-      id: "breakfast",
-      name: "Breakfast",
-      icon: "sunny-outline",
-      color: "#EE8CA5",
-    },
-    { id: "drinks", name: "Drinks", icon: "cafe-outline", color: "#F2A9C0" },
+    { id: "all", name: "All Meals", icon: "utensils", color: "#F4A5A8" },
   ],
   screen: null,
   editingId: null,
@@ -141,29 +129,42 @@ export function deleteProduct(id: string) {
   set({ ...state, products: state.products.filter((p) => p.id !== id) });
 }
 
-export function saveCategory(id: string | null, name: string) {
+export function saveCategory(
+  id: string | null,
+  name: string,
+  icon: string,
+): string | null {
+  const clean = name.trim();
+  if (!clean) return "Enter a category name.";
+
+  const taken = state.categories.some(
+    (c) => c.id !== id && c.name.toLowerCase() === clean.toLowerCase(),
+  );
+  if (taken) return "A category with that name already exists.";
+
   const existing = state.categories.find((c) => c.id === id);
 
   if (existing) {
     set({
       ...state,
       categories: state.categories.map((c) =>
-        c.id === existing.id ? { ...c, name } : c,
+        c.id === existing.id ? { ...c, name: clean, icon } : c,
       ),
       products: state.products.map((p) =>
-        p.category === existing.name ? { ...p, category: name } : p,
+        p.category === existing.name ? { ...p, category: clean } : p,
       ),
     });
-    return;
+    return null;
   }
 
   const created: Category = {
     id: `c${Date.now()}`,
-    name,
-    icon: "pricetag-outline",
+    name: clean,
+    icon,
     color: tints[state.categories.length % tints.length],
   };
   set({ ...state, categories: [...state.categories, created] });
+  return null;
 }
 
 export function deleteCategory(id: string) {

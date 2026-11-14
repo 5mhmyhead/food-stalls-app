@@ -1,17 +1,39 @@
-<<<<<<< Updated upstream
-import { Ionicons } from "@expo/vector-icons";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-=======
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import type { ReactElement } from "react";
 import {
+  Feather,
+  FontAwesome5,
+  Ionicons,
+  MaterialCommunityIcons,
+  MaterialIcons,
+} from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type ReactElement,
+  type ReactNode,
+} from "react";
+import {
+  Animated,
   Dimensions,
+  Easing,
+  Platform,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import type { SvgProps } from "react-native-svg";
+
+import HistoryIcon from "@/assets/icons/history.svg";
+import HomeIcon from "@/assets/icons/home.svg";
+import MenuIcon from "@/assets/icons/menu.svg";
+import OrdersIcon from "@/assets/icons/orders.svg";
+import SettingsIcon from "@/assets/icons/settings.svg";
 
 const hiddenOn = ["sign-in", "sign-up", "recover", "payout"];
 
@@ -19,52 +41,193 @@ const { width: SW, height: SH } = Dimensions.get("window");
 const FW = Math.min(SW, SH * (390 / 844));
 
 const ACTIVE = "#e76d8a";
-const INACTIVE = "#f8e9e5";
+const INACTIVE = "#FFFFFF";
+const FOCUS_BOOST = 1;
+const native = Platform.OS !== "web";
 
-type IconDef = (color: string) => ReactElement;
+const BAR_WIDTH = FW - 20;
+const PAD_X = 10;
+const PAD_Y = 7;
+const PILL_WIDTH = 108;
 
-const icons: Record<string, IconDef> = {
-  index: (c) => <Ionicons name="home-outline" size={20} color={c} />,
-  menu: (c) => <Ionicons name="trash-outline" size={20} color={c} />,
-  orders: (c) => <Ionicons name="bag-handle-outline" size={20} color={c} />,
-  history: (c) => <MaterialIcons name="history" size={22} color={c} />,
-  profile: (c) => <Ionicons name="settings-outline" size={20} color={c} />,
+type IconSet =
+  | "ionicons"
+  | "material"
+  | "community"
+  | "feather"
+  | "fontawesome";
+
+type TabItem = {
+  route: string;
+  component?: ComponentType<SvgProps>;
+  focusedComponent?: ComponentType<SvgProps>;
+  set?: IconSet;
+  name?: string;
+  focusedName?: string;
+  size?: number;
+  label?: string;
+  render?: (color: string, focused: boolean) => ReactElement;
 };
+
+const ICON_SETS: Record<IconSet, ComponentType<any>> = {
+  ionicons: Ionicons,
+  material: MaterialIcons,
+  community: MaterialCommunityIcons,
+  feather: Feather,
+  fontawesome: FontAwesome5,
+};
+
+const TAB_ITEMS: TabItem[] = [
+  { route: "home", component: HomeIcon, size: 16 },
+  { route: "menu", component: MenuIcon, size: 16 },
+  { route: "orders", component: OrdersIcon, size: 16 },
+  { route: "history", component: HistoryIcon, size: 18 },
+  { route: "settings", component: SettingsIcon, size: 16 },
+];
+
+function recolor(node: ReactNode, color: string): ReactNode {
+  if (!isValidElement(node)) return node;
+
+  const props: any = node.props;
+  const next: any = {};
+
+  if (props.fill !== undefined && props.fill !== "none") next.fill = color;
+  if (props.stroke !== undefined && props.stroke !== "none")
+    next.stroke = color;
+  if (props.color !== undefined) next.color = color;
+
+  const children =
+    props.children !== undefined
+      ? Children.map(props.children, (child) => recolor(child, color))
+      : undefined;
+
+  return children !== undefined
+    ? cloneElement(node, next, children)
+    : cloneElement(node, next);
+}
+
+function ColoredSvg({
+  Svg,
+  size,
+  color,
+}: {
+  Svg: ComponentType<SvgProps>;
+  size: number;
+  color: string;
+}) {
+  let content: ReactNode;
+
+  try {
+    const tree = (Svg as any)({ width: "100%", height: "100%", color });
+    content = recolor(tree, color);
+  } catch {
+    content = <Svg width="100%" height="100%" color={color} />;
+  }
+
+  return <View style={{ width: size, height: size }}>{content}</View>;
+}
+
+function TabIcon({
+  item,
+  color,
+  focused,
+}: {
+  item: TabItem;
+  color: string;
+  focused: boolean;
+}) {
+  const size = (item.size ?? 16) + (focused ? FOCUS_BOOST : 0);
+
+  if (item.render) return item.render(color, focused);
+
+  const Svg =
+    focused && item.focusedComponent ? item.focusedComponent : item.component;
+  if (Svg) return <ColoredSvg Svg={Svg} size={size} color={color} />;
+
+  const Icon = ICON_SETS[item.set ?? "ionicons"];
+  const name = focused && item.focusedName ? item.focusedName : item.name;
+
+  return <Icon name={name} size={size} color={color} />;
+}
+
+function FadeLabel({ text }: { text: string }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 260,
+      delay: 90,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: native,
+    }).start();
+  }, []);
+
+  return (
+    <Animated.Text style={[styles.label, { opacity }]} numberOfLines={1}>
+      {text}
+    </Animated.Text>
+  );
+}
 
 export default function TabBar({ state, descriptors }: any) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const current = state.routes[state.index].name;
 
+  const visible = TAB_ITEMS.filter((item) =>
+    state.routes.some((r: any) => r.name === item.route),
+  );
+  const count = visible.length;
+  const activeIndex = Math.max(
+    0,
+    visible.findIndex((item) => item.route === current),
+  );
+
+  const [inner, setInner] = useState(BAR_WIDTH - PAD_X * 2);
+  const slotWidth = (inner - PILL_WIDTH) / Math.max(count - 1, 1);
+  const pillX = useRef(new Animated.Value(0)).current;
+  const placed = useRef(false);
+
+  useEffect(() => {
+    const value = activeIndex * slotWidth;
+    if (!placed.current) {
+      pillX.setValue(value);
+      placed.current = true;
+      return;
+    }
+    Animated.spring(pillX, {
+      toValue: value,
+      damping: 16,
+      stiffness: 170,
+      mass: 0.9,
+      useNativeDriver: native,
+    }).start();
+  }, [activeIndex, slotWidth]);
+
   if (hiddenOn.includes(current)) return null;
->>>>>>> Stashed changes
 
-export default function TabBar({
-  state,
-  descriptors,
-  navigation,
-}: any) {
   return (
-    <View style={styles.wrapper}>
-      <View style={styles.container}>
-<<<<<<< Updated upstream
-        {state.routes.map((route: any, index: any) => {
-=======
-        {state.routes.map((route: any, index: number) => {
-          const renderIcon = icons[route.name];
-          if (!renderIcon) return null;
+    <View style={[styles.wrapper, { bottom: insets.bottom + 15 }]}>
+      <View
+        style={styles.container}
+        onLayout={(e) => setInner(e.nativeEvent.layout.width - PAD_X * 2)}
+      >
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.pill,
+            { width: PILL_WIDTH, transform: [{ translateX: pillX }] },
+          ]}
+        />
 
->>>>>>> Stashed changes
-          const isFocused = state.index === index;
+        {visible.map((item, index) => {
+          const route = state.routes.find((r: any) => r.name === item.route);
+          const isFocused = index === activeIndex;
 
           const onPress = () => {
-            const event = navigation.emit({
-              type: "tabPress",
-              target: route.key,
-              canPreventDefault: true,
-            });
-
-            if (!isFocused && !event.defaultPrevented)
-              navigation.navigate(route.name);
+            if (isFocused) return;
+            router.navigate(`/${route.name}` as any);
           };
 
           return (
@@ -72,23 +235,20 @@ export default function TabBar({
               key={route.key}
               onPress={onPress}
               activeOpacity={0.8}
-              style={[styles.tab, isFocused && styles.activeTab]}
+              style={[
+                styles.tab,
+                { width: isFocused ? PILL_WIDTH : slotWidth },
+              ]}
             >
-              {renderIcon(isFocused ? ACTIVE : INACTIVE)}
+              <TabIcon
+                item={item}
+                color={isFocused ? ACTIVE : INACTIVE}
+                focused={isFocused}
+              />
               {isFocused && (
-<<<<<<< Updated upstream
-                <Text
-                  style={{
-                    color: "#e76d8a",
-                    fontFamily: "Poppins",
-                    fontSize: 13,
-                  }}
-                >
-=======
-                <Text style={styles.label}>
->>>>>>> Stashed changes
-                  {descriptors[route.key].options.title}
-                </Text>
+                <FadeLabel
+                  text={item.label ?? descriptors[route.key].options.title}
+                />
               )}
             </TouchableOpacity>
           );
@@ -99,83 +259,44 @@ export default function TabBar({
 }
 
 const styles = StyleSheet.create({
-<<<<<<< Updated upstream
-    wrapper: {
-        position: "absolute",
-        bottom: 20,
-        left: 20,
-        right: 20,
-    },
-    container: {
-        flexDirection: "row",
-        backgroundColor: "#e76d8a",
-        borderRadius: 50,
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        alignItems: "center",
-        justifyContent: "space-between",
-
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 10,
-        elevation: 8,
-    },
-    tab: {
-        alignItems: "center",
-        justifyContent: "center",
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 50,
-    },
-    activeTab: {
-        backgroundColor: "#f8e9e5",
-        paddingHorizontal: 16,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-    },
-});
-=======
   wrapper: {
     position: "absolute",
-    bottom: 20,
     left: 0,
     right: 0,
     alignItems: "center",
   },
   container: {
-    width: FW - 20, // was FW - 40
+    width: BAR_WIDTH,
     flexDirection: "row",
     backgroundColor: ACTIVE,
     borderRadius: 50,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingVertical: PAD_Y,
+    paddingHorizontal: PAD_X,
     alignItems: "center",
-    justifyContent: "space-between",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
     elevation: 8,
   },
+  pill: {
+    position: "absolute",
+    left: PAD_X,
+    top: PAD_Y,
+    bottom: PAD_Y,
+    borderRadius: 50,
+    backgroundColor: INACTIVE,
+  },
   tab: {
+    height: 36,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 50,
-  },
-  activeTab: {
-    backgroundColor: INACTIVE,
-    paddingHorizontal: 14,
     flexDirection: "row",
-    gap: 6,
+    gap: 7,
   },
   label: {
     color: ACTIVE,
-    fontFamily: "Poppins_600SemiBold",
-    fontSize: 12,
+    fontFamily: "Poppins_700Bold",
+    fontSize: 13,
   },
 });
->>>>>>> Stashed changes

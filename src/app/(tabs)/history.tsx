@@ -45,9 +45,25 @@ export default function History() {
         { size: 130, top: -60, left: 100 },
         { size: 55, top: 40, left: 215 },
       ]}
-      left={<IconBtn name="arrow-back" onPress={() => router.navigate("/")} />}
+      left={
+        <IconBtn name="arrow-back" onPress={() => router.navigate("/home")} />
+      }
       right={<IconBtn name="menu" />}
     >
+      {orders.length === 0 ? (
+        <Text
+          style={{
+            fontFamily: F.reg,
+            fontSize: 13 * u,
+            color: COLORS.navy,
+            textAlign: "center",
+            marginTop: 40 * u,
+          }}
+        >
+          No orders available
+        </Text>
+      ) : null}
+
       <View style={{ gap: 12 * u }}>
         {orders.map((o) => {
           const s = look[o.status];

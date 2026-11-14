@@ -1,4 +1,5 @@
 import { itemCount, useCatalog } from "@/catalogStore";
+import CategoryIcon from "@/components/CategoryIcon";
 import {
   COLORS,
   Card,
@@ -13,6 +14,7 @@ import {
   u,
 } from "@/components/Ui";
 import { peso } from "@/data/products";
+import { openManage } from "@/manageStore";
 import { changeQty, selectProduct, useOrderState } from "@/orderStore";
 import { openPayout } from "@/payoutStore";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,9 +22,9 @@ import { useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 const stepBtn = {
-  height: 28 * u,
-  minWidth: 36 * u,
-  borderRadius: 14 * u,
+  height: 26 * u,
+  width: 48 * u,
+  borderRadius: 13 * u,
   backgroundColor: COLORS.pink,
   alignItems: "center" as const,
   justifyContent: "center" as const,
@@ -57,18 +59,36 @@ export default function Orders() {
           onPress={() => openPayout()}
         />
       }
-      right={
-        <>
-          <IconBtn name="notifications-outline" />
-          <IconBtn name="funnel-outline" />
-        </>
-      }
+      right={<IconBtn name="funnel-outline" />}
     >
       <SearchBar
         placeholder="search for a meal..."
         value={query}
         onChangeText={setQuery}
       />
+
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => openManage()}
+        style={{
+          backgroundColor: COLORS.pink,
+          borderRadius: 999,
+          height: 34 * u,
+          alignItems: "center",
+          justifyContent: "center",
+          marginTop: 12 * u,
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: F.semi,
+            fontSize: 12 * u,
+            color: "#FFFFFF",
+          }}
+        >
+          Manage Orders
+        </Text>
+      </TouchableOpacity>
 
       <ScrollView
         horizontal
@@ -94,11 +114,7 @@ export default function Orders() {
                 justifyContent: "space-between",
               }}
             >
-              <Ionicons
-                name={c.icon as any}
-                size={22 * u}
-                color={COLORS.navy}
-              />
+              <CategoryIcon name={c.icon} size={32 * u} color={COLORS.navy} />
               <View>
                 <Heading size={26}>{c.name}</Heading>
                 <Text
@@ -116,7 +132,7 @@ export default function Orders() {
         ))}
       </ScrollView>
 
-      {shown.length === 0 && (
+      {q !== "" && shown.length === 0 && (
         <Text
           style={{
             fontFamily: F.reg,
@@ -198,33 +214,40 @@ export default function Orders() {
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
-                  gap: 8 * u,
+                  backgroundColor: "#FFFFFF",
+                  borderWidth: 1,
+                  borderColor: COLORS.pink,
+                  borderRadius: 999,
+                  padding: 3 * u,
                   marginTop: 8 * u,
-                  marginBottom: 4 * u,
-                  paddingHorizontal: 4 * u,
+                  marginBottom: 2 * u,
                 }}
               >
-                {n > 0 && (
+                {n > 0 ? (
                   <TouchableOpacity
                     style={stepBtn}
                     onPress={() => changeQty(p.id, -1)}
                   >
                     <Ionicons name="remove" size={16 * u} color="#FFFFFF" />
                   </TouchableOpacity>
+                ) : (
+                  <View style={{ width: stepBtn.width }} />
                 )}
+
                 <Text
                   style={{
+                    flex: 1,
                     fontFamily: F.semi,
                     fontSize: 13 * u,
                     color: COLORS.navy,
-                    minWidth: 16 * u,
                     textAlign: "center",
                   }}
                 >
                   {n}
                 </Text>
+
                 <TouchableOpacity
-                  style={[stepBtn, { flex: 1 }]}
+                  style={stepBtn}
                   onPress={() => changeQty(p.id, 1)}
                 >
                   <Ionicons name="add" size={16 * u} color="#FFFFFF" />
