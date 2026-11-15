@@ -1,6 +1,6 @@
 # Sprint 5
 
-**Dates:** October 26 – October 30, 2026
+**Dates:** November 9 – November 14, 2026
 
 **Sprint Lead:** Dwyane S. Sido
 
