@@ -6,7 +6,7 @@
 
 **Demo By:** Adi De Vera
 
-**Goal:** Core UI Implementation
+**Goal:** Endpoint Integration
 
 ## Tasks
 
