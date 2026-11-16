@@ -13,12 +13,13 @@ import {
   COLORS,
   Card,
   F,
-  FW,
   Heading,
   IconBtn,
   Page,
   Thumb,
+  TintedIcon,
   u,
+  type SvgIcon,
 } from "@/components/Ui";
 import { peso } from "@/data/products";
 import { openManage, useManageState } from "@/manageStore";
@@ -32,24 +33,13 @@ import Svg, { Circle } from "react-native-svg";
 
 const SafeMaskedView = MaskedView as unknown as ComponentType<any>;
 
-type SvgIcon = ComponentType<{ width: number; height: number }>;
-
-type Action = {
-  title: string;
-  Icon: SvgIcon;
-  primary?: boolean;
-  onPress: () => void;
-};
-
-const SLICES = ["#E86A8A", "#EE8BA4", "#F4A5A8", "#F2BFCB"];
-
-function TintedIcon({
+function MaskedIcon({
   Icon,
   width,
   height,
   color,
 }: {
-  Icon: SvgIcon;
+  Icon: ComponentType<{ width: number; height: number }>;
   width: number;
   height: number;
   color: string;
@@ -67,6 +57,15 @@ function TintedIcon({
     </SafeMaskedView>
   );
 }
+
+type Action = {
+  title: string;
+  Icon: SvgIcon;
+  primary?: boolean;
+  onPress: () => void;
+};
+
+const SLICES = ["#E86A8A", "#EE8BA4", "#F4A5A8", "#F2BFCB"];
 
 function Bubble({
   size,
@@ -141,7 +140,7 @@ function Welcome() {
       <Bubble size={82} top={105} right={16} />
       <Bubble size={105} top={120} left={-32} />
 
-      <TintedIcon Icon={Kitty} width={54 * u} height={42 * u} color="#FFFFFF" />
+      <MaskedIcon Icon={Kitty} width={72 * u} height={62 * u} color="#FFFFFF" />
 
       <Text
         style={{
@@ -580,7 +579,7 @@ function LegendRow({
 function AdminStats() {
   const { orders } = useManageState();
   const { products } = useCatalog();
-  const cardWidth = (FW - 44 * u - 12 * u) / 2;
+  const cardWidth = 167 * u;
 
   const completed = orders.filter((o) => o.status === "Complete");
   const revenue = completed.reduce((sum, o) => sum + o.price, 0);

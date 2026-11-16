@@ -34,6 +34,7 @@ export const COLORS = {
   navy: "#243759",
   border: "#DFD3D1",
   white: "#FFFFFF",
+  purple: "#7B5EA7",
 };
 
 export const F = {
