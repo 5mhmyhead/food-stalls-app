@@ -1,4 +1,13 @@
+import AddOrderIcon from "@/assets/icons/add-order.svg";
+import FlameIcon from "@/assets/icons/flame.svg";
+import HistoryIcon from "@/assets/icons/history.svg";
 import Kitty from "@/assets/icons/kitty.svg";
+import MenuIcon from "@/assets/icons/knife.svg";
+import PendingIcon from "@/assets/icons/pending.svg";
+import ProductsIcon from "@/assets/icons/products.svg";
+import RevenueIcon from "@/assets/icons/revenue.svg";
+import TrendingDownIcon from "@/assets/icons/trending-down.svg";
+import UsersIcon from "@/assets/icons/users.svg";
 import { useCatalog } from "@/catalogStore";
 import {
   COLORS,
@@ -14,38 +23,47 @@ import {
 import { peso } from "@/data/products";
 import { openManage, useManageState } from "@/manageStore";
 import { useSettings } from "@/settingsStore";
-import { Ionicons } from "@expo/vector-icons";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import type { ComponentType } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
 const SafeMaskedView = MaskedView as unknown as ComponentType<any>;
 
-type Glyph = keyof typeof Ionicons.glyphMap;
+type SvgIcon = ComponentType<{ width: number; height: number }>;
 
 type Action = {
   title: string;
-  icon: Glyph;
+  Icon: SvgIcon;
   primary?: boolean;
   onPress: () => void;
 };
 
-const SLICES = ["#E8708C", "#EE8CA5", "#F4A5A8", "#F2BFCB"];
+const SLICES = ["#E86A8A", "#EE8BA4", "#F4A5A8", "#F2BFCB"];
 
-function WhiteKitty({ width, height }: { width: number; height: number }) {
+function TintedIcon({
+  Icon,
+  width,
+  height,
+  color,
+}: {
+  Icon: SvgIcon;
+  width: number;
+  height: number;
+  color: string;
+}) {
   return (
     <SafeMaskedView
       style={{ width, height }}
       maskElement={
         <View style={{ width, height, backgroundColor: "transparent" }}>
-          <Kitty width={width} height={height} />
+          <Icon width={width} height={height} />
         </View>
       }
     >
-      <View style={{ flex: 1, backgroundColor: "#FFFFFF" }} />
+      <View style={{ flex: 1, backgroundColor: color }} />
     </SafeMaskedView>
   );
 }
@@ -54,23 +72,26 @@ function Bubble({
   size,
   top,
   right,
+  left,
 }: {
   size: number;
   top: number;
-  right: number;
+  right?: number;
+  left?: number;
 }) {
   return (
     <LinearGradient
-      colors={["rgba(255,255,255,0.35)", "rgba(255,255,255,0)"]}
-      start={{ x: 0.5, y: 0 }}
-      end={{ x: 0.5, y: 1 }}
+      colors={["rgba(255,255,255,0.34)", "rgba(255,255,255,0.0)"]}
+      start={{ x: 0.25, y: 0 }}
+      end={{ x: 0.75, y: 1 }}
       style={{
         position: "absolute",
         width: size * u,
         height: size * u,
         borderRadius: (size * u) / 2,
         top: top * u,
-        right: right * u,
+        ...(right !== undefined ? { right: right * u } : {}),
+        ...(left !== undefined ? { left: left * u } : {}),
       }}
     />
   );
@@ -83,23 +104,23 @@ function Welcome() {
   const buttons: Action[] = [
     {
       title: "Make an Order",
-      icon: "add-circle-outline",
+      Icon: AddOrderIcon,
       primary: true,
       onPress: () => router.navigate("/orders"),
     },
     {
       title: "View Menu",
-      icon: "restaurant-outline",
+      Icon: MenuIcon,
       onPress: () => router.navigate("/menu"),
     },
     {
       title: "Order History",
-      icon: "time-outline",
+      Icon: HistoryIcon,
       onPress: () => router.navigate("/history"),
     },
     {
       title: "Pending Orders",
-      icon: "clipboard-outline",
+      Icon: PendingIcon,
       onPress: () => openManage(),
     },
   ];
@@ -107,16 +128,20 @@ function Welcome() {
   return (
     <View
       style={{
-        backgroundColor: COLORS.pink,
+        backgroundColor: "#E86A8A",
         borderRadius: 20 * u,
-        padding: 16 * u,
+        paddingHorizontal: 20 * u,
+        paddingTop: 20 * u,
+        paddingBottom: 22 * u,
         overflow: "hidden",
       }}
     >
-      <Bubble size={150} top={-40} right={-30} />
-      <Bubble size={70} top={110} right={150} />
+      <Bubble size={125} top={-18} right={-40} />
+      <Bubble size={115} top={24} left={105} />
+      <Bubble size={82} top={105} right={16} />
+      <Bubble size={105} top={120} left={-32} />
 
-      <WhiteKitty width={54 * u} height={42 * u} />
+      <TintedIcon Icon={Kitty} width={54 * u} height={42 * u} color="#FFFFFF" />
 
       <Text
         style={{
@@ -124,7 +149,7 @@ function Welcome() {
           fontSize: 26 * u,
           lineHeight: 32 * u,
           color: "#FFFFFF",
-          marginTop: 8 * u,
+          marginTop: 10 * u,
         }}
       >
         Welcome back, {username}!
@@ -134,47 +159,54 @@ function Welcome() {
           fontFamily: F.reg,
           fontSize: 11 * u,
           lineHeight: 16 * u,
-          color: "#FFFFFF",
+          color: "rgba(255,255,255,0.92)",
           marginTop: 6 * u,
-          marginBottom: 14 * u,
+          marginBottom: 18 * u,
         }}
       >
-        Everything is fresh and in order today! What would you like to get
-        started with?
+        {
+          "Everything is fresh and in order today!\nWhat would you like to get started with?"
+        }
       </Text>
 
       <View style={{ gap: 10 * u }}>
-        {buttons.map((b) => (
-          <TouchableOpacity
-            key={b.title}
-            activeOpacity={0.85}
-            onPress={b.onPress}
-            style={{
-              height: 40 * u,
-              borderRadius: 12 * u,
-              backgroundColor: b.primary ? "#FDEDEA" : "rgba(255,255,255,0.22)",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8 * u,
-            }}
-          >
-            <Ionicons
-              name={b.icon}
-              size={17 * u}
-              color={b.primary ? COLORS.pink : "#FFFFFF"}
-            />
-            <Text
+        {buttons.map((b) => {
+          const iconColor = b.primary ? "#E86A8A" : "#FFFFFF";
+          return (
+            <TouchableOpacity
+              key={b.title}
+              activeOpacity={0.85}
+              onPress={b.onPress}
               style={{
-                fontFamily: F.semi,
-                fontSize: 13 * u,
-                color: b.primary ? COLORS.pink : "#FFFFFF",
+                height: 42 * u,
+                borderRadius: 10 * u,
+                backgroundColor: b.primary
+                  ? "#FDEDEA"
+                  : "rgba(255,255,255,0.26)",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8 * u,
               }}
             >
-              {b.title}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <TintedIcon
+                Icon={b.Icon}
+                width={17 * u}
+                height={17 * u}
+                color={iconColor}
+              />
+              <Text
+                style={{
+                  fontFamily: F.semi,
+                  fontSize: 13.5 * u,
+                  color: iconColor,
+                }}
+              >
+                {b.title}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );
@@ -189,13 +221,31 @@ function Restock() {
     .sort((a, b) => a.stock - b.stock);
 
   return (
-    <Card style={{ padding: 14 * u }}>
-      <Heading size={22}>Menu Items to Restock</Heading>
+    <Card
+      style={{
+        paddingHorizontal: 15 * u,
+        paddingTop: 15 * u,
+        paddingBottom: 0,
+        borderRadius: 18 * u,
+        overflow: "hidden",
+      }}
+    >
+      <Heading size={21}>Menu Items to Restock</Heading>
 
-      <View style={{ gap: 10 * u, marginTop: 12 * u }}>
+      <ScrollView
+        nestedScrollEnabled
+        showsVerticalScrollIndicator={false}
+        style={{ maxHeight: 255 * u, marginTop: 10 * u }}
+        contentContainerStyle={{ gap: 9 * u, paddingBottom: 12 * u }}
+      >
         {low.length === 0 ? (
           <Text
-            style={{ fontFamily: F.reg, fontSize: 12 * u, color: COLORS.navy }}
+            style={{
+              fontFamily: F.reg,
+              fontSize: 12 * u,
+              color: COLORS.navy,
+              paddingBottom: 14 * u,
+            }}
           >
             Everything is stocked up.
           </Text>
@@ -207,9 +257,10 @@ function Restock() {
             style={{
               backgroundColor: "#FDEDEA",
               borderWidth: 1,
-              borderColor: COLORS.pink,
-              borderRadius: 12 * u,
-              padding: 10 * u,
+              borderColor: "#E98A9F",
+              borderRadius: 11 * u,
+              paddingHorizontal: 10 * u,
+              paddingVertical: 8 * u,
             }}
           >
             <View
@@ -233,7 +284,7 @@ function Restock() {
                 style={{
                   fontFamily: F.reg,
                   fontSize: 9.5 * u,
-                  color: COLORS.pink,
+                  color: "#E86A8A",
                 }}
               >
                 {p.stock === 0 ? "Out of stock" : `Only ${p.stock} Left!`}
@@ -244,15 +295,20 @@ function Restock() {
                 flexDirection: "row",
                 justifyContent: "space-between",
                 alignItems: "flex-end",
-                marginTop: 6 * u,
+                marginTop: 5 * u,
               }}
             >
-              <Thumb width={84 * u} height={54} color={p.color} />
+              <Thumb
+                width={90 * u}
+                height={48}
+                color={p.color}
+                source={p.image ? { uri: p.image } : undefined}
+              />
               <Text
                 style={{
                   fontFamily: F.bold,
                   fontSize: 15 * u,
-                  color: COLORS.pink,
+                  color: "#E86A8A",
                 }}
               >
                 {peso(p.price)}
@@ -260,7 +316,7 @@ function Restock() {
             </View>
           </View>
         ))}
-      </View>
+      </ScrollView>
     </Card>
   );
 }
@@ -268,38 +324,60 @@ function Restock() {
 function Stat({
   label,
   value,
-  icon,
+  Icon,
   tint,
   width,
 }: {
   label: string;
   value: string;
-  icon: Glyph;
+  Icon: SvgIcon;
   tint: string;
   width?: number;
 }) {
   return (
-    <Card style={{ width, padding: 14 * u }}>
+    <Card
+      style={{
+        width,
+        paddingHorizontal: 16 * u,
+        paddingVertical: 15 * u,
+        borderRadius: 18 * u,
+      }}
+    >
       <View
         style={{
-          width: 30 * u,
-          height: 30 * u,
-          borderRadius: 15 * u,
+          width: 32 * u,
+          height: 32 * u,
+          borderRadius: 16 * u,
           backgroundColor: tint,
           alignItems: "center",
           justifyContent: "center",
-          marginBottom: 10 * u,
+          marginBottom: 11 * u,
         }}
       >
-        <Ionicons name={icon} size={17 * u} color={COLORS.navy} />
+        <TintedIcon
+          Icon={Icon}
+          width={17 * u}
+          height={17 * u}
+          color={COLORS.navy}
+        />
       </View>
       <Text
-        style={{ fontFamily: F.reg, fontSize: 10.5 * u, color: COLORS.navy }}
+        style={{
+          fontFamily: F.reg,
+          fontSize: 10.5 * u,
+          color: COLORS.navy,
+          opacity: 0.85,
+        }}
       >
         {label}
       </Text>
       <Text
-        style={{ fontFamily: F.bold, fontSize: 22 * u, color: COLORS.navy }}
+        style={{
+          fontFamily: F.bold,
+          fontSize: 22 * u,
+          color: COLORS.navy,
+          marginTop: 2 * u,
+        }}
       >
         {value}
       </Text>
@@ -308,13 +386,13 @@ function Stat({
 }
 
 function Highlight({
-  icon,
+  Icon,
   title,
   name,
   note,
   color,
 }: {
-  icon: Glyph;
+  Icon: SvgIcon;
   title: string;
   name: string;
   note: string;
@@ -325,18 +403,29 @@ function Highlight({
       style={{
         backgroundColor: color,
         borderRadius: 18 * u,
-        padding: 16 * u,
+        paddingVertical: 18 * u,
+        paddingHorizontal: 16 * u,
         overflow: "hidden",
         alignItems: "center",
       }}
     >
-      <Bubble size={110} top={-30} right={-20} />
-      <Bubble size={60} top={70} right={230} />
+      <Bubble size={108} top={-34} right={-14} />
+      <Bubble size={104} top={24} left={-18} />
+      <Bubble size={72} top={68} right={24} />
 
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 * u }}>
-        <Ionicons name={icon} size={16 * u} color="#FFFFFF" />
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 7 * u }}>
+        <TintedIcon
+          Icon={Icon}
+          width={17 * u}
+          height={17 * u}
+          color="#FFFFFF"
+        />
         <Text
-          style={{ fontFamily: F.title, fontSize: 15 * u, color: "#FFFFFF" }}
+          style={{
+            fontFamily: F.title,
+            fontSize: 15.5 * u,
+            color: "rgba(255,255,255,0.92)",
+          }}
         >
           {title}
         </Text>
@@ -348,14 +437,20 @@ function Highlight({
           fontFamily: F.title,
           fontSize: 38 * u,
           lineHeight: 46 * u,
-          color: "#FFFFFF",
+          color: "rgba(255,255,255,0.68)",
           textAlign: "center",
-          marginVertical: 4 * u,
+          marginVertical: 3 * u,
         }}
       >
         {name}
       </Text>
-      <Text style={{ fontFamily: F.reg, fontSize: 11 * u, color: "#FFFFFF" }}>
+      <Text
+        style={{
+          fontFamily: F.reg,
+          fontSize: 10.5 * u,
+          color: "rgba(255,255,255,0.92)",
+        }}
+      >
         {note}
       </Text>
     </View>
@@ -369,18 +464,22 @@ function Donut({
   slices: { value: number; color: string }[];
   total: number;
 }) {
-  const size = 150 * u;
-  const stroke = 24 * u;
+  const size = 162 * u;
+  const stroke = 25 * u;
   const radius = (size - stroke) / 2;
   const circ = 2 * Math.PI * radius;
   const sum = slices.reduce((s, x) => s + x.value, 0);
-  const gap = slices.length > 1 ? 4 * u : 0;
+  const gap = slices.length > 1 ? 28 * u : 0;
 
   const arcs: { dash: number; offset: number; color: string }[] = [];
   let used = 0;
   slices.forEach((s) => {
-    const len = (s.value / sum) * circ;
-    arcs.push({ dash: Math.max(len - gap, 0), offset: used, color: s.color });
+    const len = sum > 0 ? (s.value / sum) * circ : 0;
+    arcs.push({
+      dash: Math.max(len - gap, 0),
+      offset: used + gap / 2,
+      color: s.color,
+    });
     used += len;
   });
 
@@ -411,6 +510,7 @@ function Donut({
                 r={radius}
                 stroke={a.color}
                 strokeWidth={stroke}
+                strokeLinecap="round"
                 fill="none"
                 strokeDasharray={`${a.dash} ${circ - a.dash}`}
                 strokeDashoffset={circ / 4 - a.offset}
@@ -425,7 +525,12 @@ function Donut({
           {total}
         </Text>
         <Text
-          style={{ fontFamily: F.reg, fontSize: 10 * u, color: COLORS.navy }}
+          style={{
+            fontFamily: F.reg,
+            fontSize: 10 * u,
+            color: COLORS.navy,
+            marginTop: -1 * u,
+          }}
         >
           items sold
         </Text>
@@ -444,19 +549,19 @@ function LegendRow({
   percent: number;
 }) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 * u }}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 * u }}>
       <View
         style={{
           width: 11 * u,
           height: 11 * u,
-          borderRadius: 6 * u,
+          borderRadius: 5.5 * u,
           backgroundColor: color,
         }}
       />
       <Text
         style={{
           fontFamily: F.reg,
-          fontSize: 10.5 * u,
+          fontSize: 11 * u,
           color: COLORS.navy,
           flex: 1,
         }}
@@ -464,7 +569,7 @@ function LegendRow({
         {name}
       </Text>
       <Text
-        style={{ fontFamily: F.semi, fontSize: 10.5 * u, color: COLORS.navy }}
+        style={{ fontFamily: F.bold, fontSize: 11 * u, color: COLORS.navy }}
       >
         {percent}%
       </Text>
@@ -527,48 +632,55 @@ function AdminStats() {
       <Stat
         label="All Time Revenue"
         value={peso(revenue)}
-        icon="bar-chart"
-        tint={COLORS.pink}
+        Icon={RevenueIcon}
+        tint="#E86A8A"
       />
 
       <View style={{ flexDirection: "row", gap: 12 * u }}>
         <Stat
           label="Total Customers"
           value={String(customers)}
-          icon="person-circle-outline"
-          tint={COLORS.soft}
+          Icon={UsersIcon}
+          tint="#F4A5A8"
           width={cardWidth}
         />
         <Stat
           label="Products Sold"
           value={String(sold)}
-          icon="cart-outline"
-          tint={COLORS.purple}
+          Icon={ProductsIcon}
+          tint="#B3A6D6"
           width={cardWidth}
         />
       </View>
 
       <Highlight
-        icon="flame-outline"
+        Icon={FlameIcon}
         title="All Time Top Selling!"
         name={best ? best[0] : "No sales yet"}
         note={best ? salesText(best[1].qty) : "Complete an order to see this"}
-        color={COLORS.pink}
+        color="#E86A8A"
       />
 
       <Highlight
-        icon="trending-down-outline"
+        Icon={TrendingDownIcon}
         title="All Time Lowest Sales!"
         name={worst ? worst[0] : "No data yet"}
         note={worst ? salesText(worst[1].qty) : "Needs at least two items sold"}
-        color={COLORS.soft}
+        color="#F4A5A8"
       />
 
-      <Card style={{ padding: 16 * u, alignItems: "center" }}>
+      <Card
+        style={{
+          paddingVertical: 18 * u,
+          paddingHorizontal: 18 * u,
+          borderRadius: 18 * u,
+          alignItems: "center",
+        }}
+      >
         <Heading size={24} center>
           Sales by Category
         </Heading>
-        <View style={{ marginTop: 12 * u }}>
+        <View style={{ marginTop: 16 * u }}>
           <Donut
             total={sold}
             slices={categories.map(([, n], i) => ({
@@ -577,7 +689,14 @@ function AdminStats() {
             }))}
           />
         </View>
-        <View style={{ alignSelf: "stretch", gap: 8 * u, marginTop: 14 * u }}>
+        <View
+          style={{
+            alignSelf: "stretch",
+            gap: 8 * u,
+            marginTop: 18 * u,
+            paddingHorizontal: 26 * u,
+          }}
+        >
           {categories.length === 0 ? (
             <Text
               style={{
@@ -601,14 +720,20 @@ function AdminStats() {
         </View>
       </Card>
 
-      <Card style={{ padding: 16 * u }}>
-        <Heading size={24}>Item Revenue Chart</Heading>
+      <Card
+        style={{
+          paddingVertical: 17 * u,
+          paddingHorizontal: 17 * u,
+          borderRadius: 18 * u,
+        }}
+      >
+        <Heading size={23}>Item Revenue Chart</Heading>
         <Text
           style={{
             fontFamily: F.bold,
-            fontSize: 24 * u,
+            fontSize: 23 * u,
             color: COLORS.navy,
-            marginTop: 4 * u,
+            marginTop: 2 * u,
           }}
         >
           {peso(revenue)}
@@ -617,12 +742,13 @@ function AdminStats() {
         <View
           style={{
             flexDirection: "row",
-            height: 22 * u,
-            borderRadius: 8 * u,
+            height: 20 * u,
+            borderRadius: 6 * u,
             overflow: "hidden",
-            backgroundColor: COLORS.border,
-            gap: 3 * u,
-            marginTop: 12 * u,
+            backgroundColor:
+              revenueParts.length === 0 ? COLORS.border : "transparent",
+            gap: 4 * u,
+            marginTop: 11 * u,
           }}
         >
           {revenueParts.map((part, i) => (
@@ -630,13 +756,14 @@ function AdminStats() {
               key={part.name}
               style={{
                 flex: part.value,
+                borderRadius: 6 * u,
                 backgroundColor: SLICES[i % SLICES.length],
               }}
             />
           ))}
         </View>
 
-        <View style={{ gap: 8 * u, marginTop: 14 * u }}>
+        <View style={{ gap: 8 * u, marginTop: 14 * u, paddingRight: 60 * u }}>
           {revenueParts.length === 0 ? (
             <Text
               style={{
@@ -667,14 +794,15 @@ export default function Home() {
 
   return (
     <Page
-      headerHeight={110}
+      headerHeight={145}
       bubbles={[
-        { size: 130, top: -60, left: 70 },
-        { size: 55, top: 6, left: 230 },
+        { size: 112, top: 10, left: 70 },
+        { size: 185, top: -74, left: 182 },
+        { size: 54, top: 84, left: 178 },
       ]}
       right={<IconBtn name="funnel-outline" />}
     >
-      <View style={{ gap: 14 * u }}>
+      <View style={{ gap: 14 * u, paddingBottom: 28 * u }}>
         <Welcome />
         <Restock />
         {role === "admin" ? <AdminStats /> : null}

@@ -83,6 +83,7 @@ type ProductInput = {
   category: string;
   price: number;
   stock: number;
+  image?: string;
 };
 
 export function saveProduct(input: ProductInput) {
@@ -102,6 +103,7 @@ export function saveProduct(input: ProductInput) {
       stock: input.stock,
       available: input.stock > 0,
       discount,
+      image: input.image,
     };
     set({
       ...state,
@@ -121,6 +123,7 @@ export function saveProduct(input: ProductInput) {
     discount: "0%",
     available: input.stock > 0,
     color: palette[state.products.length % palette.length],
+    image: input.image,
   };
   set({ ...state, products: [...state.products, created] });
 }

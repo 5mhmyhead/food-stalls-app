@@ -1,29 +1,45 @@
 import {
-    COLORS,
-    Card,
-    F,
-    Heading,
-    IconBtn,
-    Page,
-    Thumb,
-    u,
+  COLORS,
+  Card,
+  F,
+  Heading,
+  IconBtn,
+  Page,
+  Thumb,
+  u,
 } from "@/components/Ui";
 import { peso } from "@/data/products";
 import {
-    OrderStatus,
-    closeManage,
-    setOrderStatus,
-    useManageState,
+  OrderStatus,
+  closeManage,
+  setOrderStatus,
+  useManageState,
 } from "@/manageStore";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Animated, Platform, Text, TouchableOpacity, View } from "react-native";
 
+const native = Platform.OS !== "web";
 const tabs: OrderStatus[] = ["Pending", "Complete", "Cancelled"];
+const PAD = 4 * u;
 
 export default function ManageOrders() {
   const { orders } = useManageState();
   const [tab, setTab] = useState<OrderStatus>("Pending");
+  const [barWidth, setBarWidth] = useState(0);
+  const pillX = useRef(new Animated.Value(0)).current;
+
+  const tabWidth = barWidth > 0 ? (barWidth - 2 - PAD * 2) / tabs.length : 0;
+
+  useEffect(() => {
+    Animated.spring(pillX, {
+      toValue: tabs.indexOf(tab) * tabWidth,
+      damping: 16,
+      stiffness: 170,
+      mass: 0.9,
+      useNativeDriver: native,
+    }).start();
+  }, [tab, tabWidth]);
 
   const shown = orders.filter((o) => o.status === tab);
 
@@ -42,16 +58,33 @@ export default function ManageOrders() {
       </Card>
 
       <View
+        onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}
         style={{
           flexDirection: "row",
           backgroundColor: COLORS.card,
           borderRadius: 14 * u,
           borderWidth: 1,
           borderColor: COLORS.border,
-          padding: 4 * u,
+          padding: PAD,
           marginTop: 12 * u,
         }}
       >
+        {tabWidth > 0 ? (
+          <Animated.View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              left: PAD,
+              top: PAD,
+              width: tabWidth,
+              height: 32 * u,
+              borderRadius: 11 * u,
+              backgroundColor: COLORS.pink,
+              transform: [{ translateX: pillX }],
+            }}
+          />
+        ) : null}
+
         {tabs.map((t) => {
           const active = t === tab;
           return (
@@ -62,10 +95,8 @@ export default function ManageOrders() {
               style={{
                 flex: 1,
                 height: 32 * u,
-                borderRadius: 11 * u,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: active ? COLORS.pink : "transparent",
               }}
             >
               <Text

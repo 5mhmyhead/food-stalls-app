@@ -1,3 +1,9 @@
+import { useCatalog } from "@/catalogStore";
+import { useManageState } from "@/manageStore";
+import { useOrderDetailsState } from "@/orderDetailsStore";
+import { useOrderState } from "@/orderStore";
+import { usePayoutOpen } from "@/payoutStore";
+import { useSettings } from "@/settingsStore";
 import {
   Feather,
   FontAwesome5,
@@ -10,6 +16,7 @@ import {
   Children,
   cloneElement,
   isValidElement,
+  memo,
   useEffect,
   useRef,
   useState,
@@ -21,9 +28,10 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Keyboard,
   Platform,
+  Pressable,
   StyleSheet,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -34,8 +42,6 @@ import HomeIcon from "@/assets/icons/home.svg";
 import MenuIcon from "@/assets/icons/menu.svg";
 import OrdersIcon from "@/assets/icons/orders.svg";
 import SettingsIcon from "@/assets/icons/settings.svg";
-
-const hiddenOn = ["sign-in", "sign-up", "recover", "payout"];
 
 const { width: SW, height: SH } = Dimensions.get("window");
 const FW = Math.min(SW, SH * (390 / 844));
@@ -78,12 +84,14 @@ const ICON_SETS: Record<IconSet, ComponentType<any>> = {
 };
 
 const TAB_ITEMS: TabItem[] = [
-  { route: "home", component: HomeIcon, size: 16 },
-  { route: "menu", component: MenuIcon, size: 16 },
-  { route: "orders", component: OrdersIcon, size: 16 },
-  { route: "history", component: HistoryIcon, size: 18 },
-  { route: "settings", component: SettingsIcon, size: 16 },
+  { route: "home", label: "Home", component: HomeIcon, size: 16 },
+  { route: "menu", label: "Menu", component: MenuIcon, size: 16 },
+  { route: "orders", label: "Orders", component: OrdersIcon, size: 16 },
+  { route: "history", label: "History", component: HistoryIcon, size: 18 },
+  { route: "settings", label: "Settings", component: SettingsIcon, size: 16 },
 ];
+
+const TAB_ROUTE_NAMES = new Set(TAB_ITEMS.map((item) => item.route));
 
 function recolor(node: ReactNode, color: string): ReactNode {
   if (!isValidElement(node)) return node;
@@ -106,7 +114,37 @@ function recolor(node: ReactNode, color: string): ReactNode {
     : cloneElement(node, next);
 }
 
-function ColoredSvg({
+const svgCache = new WeakMap<ComponentType<SvgProps>, Map<string, ReactNode>>();
+
+function getRecoloredSvg(
+  Svg: ComponentType<SvgProps>,
+  color: string,
+): ReactNode {
+  let colorMap = svgCache.get(Svg);
+  if (!colorMap) {
+    colorMap = new Map();
+    svgCache.set(Svg, colorMap);
+  }
+  if (colorMap.has(color)) return colorMap.get(color);
+
+  let content: ReactNode;
+  try {
+    const tree = (Svg as any)({
+      width: "100%",
+      height: "100%",
+      color,
+      fill: color,
+    });
+    content = recolor(tree, color);
+  } catch {
+    content = <Svg width="100%" height="100%" color={color} fill={color} />;
+  }
+
+  colorMap.set(color, content);
+  return content;
+}
+
+const ColoredSvg = memo(function ColoredSvg({
   Svg,
   size,
   color,
@@ -115,19 +153,14 @@ function ColoredSvg({
   size: number;
   color: string;
 }) {
-  let content: ReactNode;
+  return (
+    <View style={{ width: size, height: size }}>
+      {getRecoloredSvg(Svg, color)}
+    </View>
+  );
+});
 
-  try {
-    const tree = (Svg as any)({ width: "100%", height: "100%", color });
-    content = recolor(tree, color);
-  } catch {
-    content = <Svg width="100%" height="100%" color={color} />;
-  }
-
-  return <View style={{ width: size, height: size }}>{content}</View>;
-}
-
-function TabIcon({
+const TabIcon = memo(function TabIcon({
   item,
   color,
   focused,
@@ -148,7 +181,7 @@ function TabIcon({
   const name = focused && item.focusedName ? item.focusedName : item.name;
 
   return <Icon name={name} size={size} color={color} />;
-}
+});
 
 function FadeLabel({ text }: { text: string }) {
   const opacity = useRef(new Animated.Value(0)).current;
@@ -156,8 +189,8 @@ function FadeLabel({ text }: { text: string }) {
   useEffect(() => {
     Animated.timing(opacity, {
       toValue: 1,
-      duration: 260,
-      delay: 90,
+      duration: 150,
+      delay: 20,
       easing: Easing.out(Easing.quad),
       useNativeDriver: native,
     }).start();
@@ -170,24 +203,47 @@ function FadeLabel({ text }: { text: string }) {
   );
 }
 
-export default function TabBar({ state, descriptors }: any) {
+export default function TabBar({ state, descriptors, navigation }: any) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const current = state.routes[state.index].name;
+  const current = state.routes[state.index]?.name;
+
+  const payoutOpen = usePayoutOpen();
+  const { open: orderDetailsOpen } = useOrderDetailsState();
+  const { selectedId } = useOrderState();
+  const { open: manageOpen } = useManageState();
+  const { screen: catalogScreen } = useCatalog();
+  const { screen: settingsScreen } = useSettings();
+
+  const currentCatalog = String(catalogScreen ?? "");
+  const currentSettings = String(settingsScreen ?? "");
+
+  const hasOverlayOpen =
+    Boolean(payoutOpen) ||
+    Boolean(orderDetailsOpen) ||
+    Boolean(selectedId) ||
+    Boolean(manageOpen) ||
+    ["products", "item", "categories", "category"].includes(currentCatalog) ||
+    ["account", "security", "preferences"].includes(currentSettings);
 
   const visible = TAB_ITEMS.filter((item) =>
     state.routes.some((r: any) => r.name === item.route),
   );
   const count = visible.length;
-  const activeIndex = Math.max(
+  const routeIndex = Math.max(
     0,
     visible.findIndex((item) => item.route === current),
   );
 
+  const [activeIndex, setActiveIndex] = useState(routeIndex);
   const [inner, setInner] = useState(BAR_WIDTH - PAD_X * 2);
   const slotWidth = (inner - PILL_WIDTH) / Math.max(count - 1, 1);
   const pillX = useRef(new Animated.Value(0)).current;
   const placed = useRef(false);
+
+  useEffect(() => {
+    setActiveIndex(routeIndex);
+  }, [routeIndex]);
 
   useEffect(() => {
     const value = activeIndex * slotWidth;
@@ -198,17 +254,20 @@ export default function TabBar({ state, descriptors }: any) {
     }
     Animated.spring(pillX, {
       toValue: value,
-      damping: 16,
-      stiffness: 170,
-      mass: 0.9,
+      damping: 20,
+      stiffness: 280,
+      mass: 0.7,
       useNativeDriver: native,
     }).start();
   }, [activeIndex, slotWidth]);
 
-  if (hiddenOn.includes(current)) return null;
+  if (!TAB_ROUTE_NAMES.has(current) || hasOverlayOpen) return null;
 
   return (
-    <View style={[styles.wrapper, { bottom: insets.bottom + 15 }]}>
+    <View
+      pointerEvents="box-none"
+      style={[styles.wrapper, { bottom: insets.bottom + 15 }]}
+    >
       <View
         style={styles.container}
         onLayout={(e) => setInner(e.nativeEvent.layout.width - PAD_X * 2)}
@@ -223,18 +282,25 @@ export default function TabBar({ state, descriptors }: any) {
 
         {visible.map((item, index) => {
           const route = state.routes.find((r: any) => r.name === item.route);
+          if (!route) return null;
           const isFocused = index === activeIndex;
 
-          const onPress = () => {
-            if (isFocused) return;
-            router.navigate(`/${route.name}` as any);
+          const handleSelect = () => {
+            if (index === routeIndex) return;
+            Keyboard.dismiss();
+            setActiveIndex(index);
+            if (navigation?.jumpTo) {
+              navigation.jumpTo(route.name);
+            } else {
+              router.navigate(`/(tabs)/${route.name}` as any);
+            }
           };
 
           return (
-            <TouchableOpacity
+            <Pressable
               key={route.key}
-              onPress={onPress}
-              activeOpacity={0.8}
+              onPress={handleSelect}
+              hitSlop={10}
               style={[
                 styles.tab,
                 { width: isFocused ? PILL_WIDTH : slotWidth },
@@ -247,10 +313,14 @@ export default function TabBar({ state, descriptors }: any) {
               />
               {isFocused && (
                 <FadeLabel
-                  text={item.label ?? descriptors[route.key].options.title}
+                  text={
+                    item.label ??
+                    descriptors?.[route.key]?.options?.title ??
+                    item.route
+                  }
                 />
               )}
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
       </View>
@@ -264,6 +334,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: "center",
+    zIndex: 50,
+    elevation: 50,
   },
   container: {
     width: BAR_WIDTH,

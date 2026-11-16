@@ -11,6 +11,7 @@ export type Product = {
   available: boolean;
   description: string;
   color: string;
+  image?: string;
 };
 
 export const products: Product[] = [];

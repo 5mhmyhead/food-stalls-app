@@ -1,33 +1,71 @@
+import AccountIcon from "@/assets/icons/account.svg";
+import PreferencesIcon from "@/assets/icons/preferences.svg";
+import SecurityIcon from "@/assets/icons/security.svg";
 import { session } from "@/auth";
 import { COLORS, Card, F, Page, PillButton, u } from "@/components/Ui";
 import { openSettings } from "@/settingsStore";
-import { Ionicons } from "@expo/vector-icons";
+import MaskedView from "@react-native-masked-view/masked-view";
 import { useRouter } from "expo-router";
+import type { ComponentType } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
-const settings = [
+const SafeMaskedView = MaskedView as unknown as ComponentType<any>;
+type SvgIcon = ComponentType<{ width: number; height: number }>;
+
+function TintedIcon({
+  Icon,
+  width,
+  height,
+  color,
+}: {
+  Icon: SvgIcon;
+  width: number;
+  height: number;
+  color: string;
+}) {
+  return (
+    <SafeMaskedView
+      style={{ width, height }}
+      maskElement={
+        <View style={{ width, height, backgroundColor: "transparent" }}>
+          <Icon width={width} height={height} />
+        </View>
+      }
+    >
+      <View style={{ flex: 1, backgroundColor: color }} />
+    </SafeMaskedView>
+  );
+}
+
+const settings: {
+  key: "account" | "security" | "preferences";
+  Icon: SvgIcon;
+  tint: string;
+  title: string;
+  sub: string;
+}[] = [
   {
     key: "account",
-    icon: "person-circle-outline",
+    Icon: AccountIcon,
     tint: "#F4A3B3",
     title: "Account",
     sub: "Change Account Details, Account Type",
   },
   {
     key: "security",
-    icon: "lock-closed-outline",
+    Icon: SecurityIcon,
     tint: "#E8708C",
     title: "Security",
     sub: "Change Password, Admin Pass",
   },
   {
     key: "preferences",
-    icon: "folder-open-outline",
+    Icon: PreferencesIcon,
     tint: "#B7A8DA",
     title: "Preferences",
     sub: "Currency, Inventory Threshold",
   },
-] as const;
+];
 
 export default function Settings() {
   const router = useRouter();
@@ -71,7 +109,12 @@ export default function Settings() {
                   justifyContent: "center",
                 }}
               >
-                <Ionicons name={s.icon} size={22 * u} color={COLORS.navy} />
+                <TintedIcon
+                  Icon={s.Icon}
+                  width={22 * u}
+                  height={22 * u}
+                  color={COLORS.navy}
+                />
               </View>
               <View style={{ flex: 1 }}>
                 <Text

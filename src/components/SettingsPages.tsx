@@ -1,3 +1,6 @@
+import AboutIcon from "@/assets/icons/about.svg";
+import ChevronDownIcon from "@/assets/icons/chevron-down.svg";
+import ChevronUpIcon from "@/assets/icons/chevron-up.svg";
 import { session } from "@/auth";
 import {
   COLORS,
@@ -21,10 +24,31 @@ import {
   upgradeWithCode,
   useSettings,
 } from "@/settingsStore";
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState, type ReactNode } from "react";
+import { useState, type ComponentType, type ReactNode } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
+
+type SvgIcon = ComponentType<{
+  width: number;
+  height: number;
+  color?: string;
+  fill?: string;
+  stroke?: string;
+}>;
+
+function TintedIcon({
+  Icon,
+  width,
+  height,
+  color,
+}: {
+  Icon: SvgIcon;
+  width: number;
+  height: number;
+  color: string;
+}) {
+  return <Icon width={width} height={height} color={color} fill={color} />;
+}
 
 type Msg = { text: string; ok: boolean } | null;
 
@@ -34,13 +58,13 @@ const FIELD_BG = "#F8E9E5";
 const FIELD_BORDER = "#F0D3CD";
 
 const bubbles = [
-  { size: 130, top: -60, left: 100 },
-  { size: 70, top: 25, left: 190 },
-  { size: 24, top: 6, left: 290 },
+  { size: 145, top: -64, left: 96 },
+  { size: 78, top: 28, left: 192 },
+  { size: 28, top: 8, left: 292 },
 ];
 
 function Sub({ children }: { children: ReactNode }) {
-  return <Heading size={17}>{children}</Heading>;
+  return <Heading size={19}>{children}</Heading>;
 }
 
 function Body({ children }: { children: ReactNode }) {
@@ -48,10 +72,10 @@ function Body({ children }: { children: ReactNode }) {
     <Text
       style={{
         fontFamily: F.reg,
-        fontSize: 11,
-        lineHeight: 15,
+        fontSize: 12 * u,
+        lineHeight: 17 * u,
         color: "#243759",
-        marginTop: 3,
+        marginTop: 4 * u,
       }}
     >
       {children}
@@ -64,10 +88,10 @@ function Label({ children }: { children: ReactNode }) {
     <Text
       style={{
         fontFamily: F.reg,
-        fontSize: 10,
+        fontSize: 11 * u,
         color: "#243759",
-        marginTop: 10,
-        marginBottom: 4,
+        marginTop: 12 * u,
+        marginBottom: 5 * u,
       }}
     >
       {children}
@@ -96,13 +120,13 @@ function Input({
       autoCorrect={false}
       selectionColor="#E8708C"
       style={{
-        height: 34,
-        borderRadius: 8,
+        height: 40 * u,
+        borderRadius: 10 * u,
         backgroundColor: "#F8E9E5",
-        paddingHorizontal: 10,
+        paddingHorizontal: 12 * u,
         paddingVertical: 0,
         fontFamily: F.reg,
-        fontSize: 13,
+        fontSize: 14 * u,
         color: "#243759",
       }}
     />
@@ -115,7 +139,7 @@ function Divider() {
       style={{
         height: 1,
         backgroundColor: COLORS.border,
-        marginVertical: 14 * u,
+        marginVertical: 16 * u,
       }}
     />
   );
@@ -127,9 +151,9 @@ function Notice({ msg }: { msg: Msg }) {
     <Text
       style={{
         fontFamily: F.reg,
-        fontSize: 11,
+        fontSize: 12 * u,
         color: msg.ok ? "#5B8F6A" : "#E8708C",
-        marginTop: 8,
+        marginTop: 9 * u,
       }}
     >
       {msg.text}
@@ -147,7 +171,7 @@ function Action({
   variant?: "solid" | "soft" | "navy";
 }) {
   return (
-    <View style={{ flexDirection: "row", marginTop: 12 * u }}>
+    <View style={{ flexDirection: "row", marginTop: 14 * u }}>
       <PillButton title={title} variant={variant} onPress={onPress} />
     </View>
   );
@@ -155,8 +179,8 @@ function Action({
 
 function Title({ children }: { children: ReactNode }) {
   return (
-    <View style={{ marginBottom: 8 * u }}>
-      <Heading size={32}>{children}</Heading>
+    <View style={{ marginBottom: 10 * u }}>
+      <Heading size={35}>{children}</Heading>
     </View>
   );
 }
@@ -164,7 +188,7 @@ function Title({ children }: { children: ReactNode }) {
 function CurrencyText({
   label,
   selected,
-  size = 13,
+  size = 14 * u,
 }: {
   label: string;
   selected?: boolean;
@@ -234,13 +258,13 @@ export function AccountPage() {
 
   return (
     <Page
-      headerHeight={130}
+      headerHeight={145}
       bubbles={bubbles}
       left={<IconBtn name="arrow-back" onPress={closeSettings} />}
     >
       <Title>Account Details</Title>
 
-      <Card style={{ padding: 12 * u }}>
+      <Card style={{ padding: 15 * u }}>
         <Sub>Change Account Details</Sub>
         <Body>You can change your username and email below.</Body>
         <Label>Username</Label>
@@ -284,33 +308,44 @@ export function AccountPage() {
         <Action title="Delete Account" onPress={onDelete} />
       </Card>
 
-      <Card style={{ marginTop: 12 * u, padding: 12 * u }}>
+      <Card style={{ marginTop: 14 * u, padding: 15 * u }}>
         <View
-          style={{ flexDirection: "row", alignItems: "center", gap: 12 * u }}
+          style={{ flexDirection: "row", alignItems: "center", gap: 14 * u }}
         >
           <View
             style={{
-              width: 40 * u,
-              height: 40 * u,
-              borderRadius: 20 * u,
+              width: 44 * u,
+              height: 44 * u,
+              borderRadius: 22 * u,
               backgroundColor: COLORS.soft,
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <Ionicons
-              name="alert-circle-outline"
-              size={20 * u}
+            <TintedIcon
+              Icon={AboutIcon}
+              width={22 * u}
+              height={22 * u}
               color={COLORS.navy}
             />
           </View>
           <View>
             <Text
-              style={{ fontFamily: F.semi, fontSize: 13, color: "#243759" }}
+              style={{
+                fontFamily: F.semi,
+                fontSize: 14.5 * u,
+                color: "#243759",
+              }}
             >
               About
             </Text>
-            <Text style={{ fontFamily: F.reg, fontSize: 10, color: "#243759" }}>
+            <Text
+              style={{
+                fontFamily: F.reg,
+                fontSize: 11 * u,
+                color: "#243759",
+              }}
+            >
               version 2.8.7
             </Text>
           </View>
@@ -357,13 +392,13 @@ export function SecurityPage() {
 
   return (
     <Page
-      headerHeight={130}
+      headerHeight={145}
       bubbles={bubbles}
       left={<IconBtn name="arrow-back" onPress={closeSettings} />}
     >
       <Title>Security</Title>
 
-      <Card style={{ padding: 12 * u }}>
+      <Card style={{ padding: 15 * u }}>
         <Sub>Change Password</Sub>
         <Body>
           Your new password should contain at least 8 characters, a capital
@@ -434,13 +469,13 @@ export function PreferencesPage() {
 
   return (
     <Page
-      headerHeight={130}
+      headerHeight={145}
       bubbles={bubbles}
       left={<IconBtn name="arrow-back" onPress={closeSettings} />}
     >
       <Title>Preferences</Title>
 
-      <Card style={{ padding: 12 * u }}>
+      <Card style={{ padding: 15 * u }}>
         <Sub>Currency</Sub>
         <Body>Set the currency used when showing prices.</Body>
 
@@ -448,22 +483,23 @@ export function PreferencesPage() {
           activeOpacity={0.85}
           onPress={() => setOpen(!open)}
           style={{
-            height: 40,
-            borderRadius: 10,
+            height: 45 * u,
+            borderRadius: 11 * u,
             backgroundColor: FIELD_BG,
             borderWidth: 1,
             borderColor: open ? PINK : FIELD_BORDER,
-            paddingHorizontal: 12,
-            marginTop: 10,
+            paddingHorizontal: 14 * u,
+            marginTop: 12 * u,
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
           }}
         >
           <CurrencyText label={selected.label} />
-          <Ionicons
-            name={open ? "chevron-up" : "chevron-down"}
-            size={14}
+          <TintedIcon
+            Icon={open ? ChevronUpIcon : ChevronDownIcon}
+            width={16 * u}
+            height={16 * u}
             color={PINK}
           />
         </TouchableOpacity>
@@ -471,12 +507,12 @@ export function PreferencesPage() {
         {open ? (
           <View
             style={{
-              marginTop: 6,
-              borderRadius: 10,
+              marginTop: 7 * u,
+              borderRadius: 11 * u,
               backgroundColor: FIELD_BG,
               borderWidth: 1,
               borderColor: PINK,
-              padding: 4,
+              padding: 5 * u,
             }}
           >
             {CURRENCIES.map((c) => {
@@ -490,9 +526,9 @@ export function PreferencesPage() {
                     setOpen(false);
                   }}
                   style={{
-                    paddingVertical: 10,
-                    paddingHorizontal: 10,
-                    borderRadius: 8,
+                    paddingVertical: 11 * u,
+                    paddingHorizontal: 12 * u,
+                    borderRadius: 9 * u,
                     borderWidth: 1,
                     borderColor: isSelected ? PINK : "transparent",
                     backgroundColor: isSelected ? PINK_SOFT : "transparent",
@@ -512,7 +548,7 @@ export function PreferencesPage() {
 
         <Sub>Inventory Threshold</Sub>
         <Body>Set when an item should be flagged as low on stock.</Body>
-        <View style={{ marginTop: 8 }}>
+        <View style={{ marginTop: 10 * u }}>
           <Input value={threshold} onChangeText={setThreshold} numeric />
         </View>
         <Notice msg={thresholdMsg} />

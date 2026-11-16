@@ -1,9 +1,10 @@
 import { COLORS, Card, F, IconBtn, Page, Thumb, u } from "@/components/Ui";
 import { peso } from "@/data/products";
 import { OrderStatus, useManageState } from "@/manageStore";
+import { openOrderDetails } from "@/orderDetailsStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Text, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 
 const look: Record<
   OrderStatus,
@@ -68,35 +69,65 @@ export default function History() {
         {orders.map((o) => {
           const s = look[o.status];
           return (
-            <Card key={o.id} style={{ padding: 12 * u }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <View style={{ flexDirection: "row", gap: 10 * u }}>
-                  <View
-                    style={{
-                      width: 34 * u,
-                      height: 34 * u,
-                      borderRadius: 10 * u,
-                      backgroundColor: s.tint,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons name={s.icon} size={19 * u} color={COLORS.navy} />
+            <TouchableOpacity
+              key={o.id}
+              activeOpacity={0.85}
+              onPress={() => openOrderDetails(o.id)}
+            >
+              <Card style={{ padding: 12 * u }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <View style={{ flexDirection: "row", gap: 10 * u }}>
+                    <View
+                      style={{
+                        width: 34 * u,
+                        height: 34 * u,
+                        borderRadius: 10 * u,
+                        backgroundColor: s.tint,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Ionicons
+                        name={s.icon}
+                        size={19 * u}
+                        color={COLORS.navy}
+                      />
+                    </View>
+                    <View>
+                      <Text
+                        style={{
+                          fontFamily: F.semi,
+                          fontSize: 14 * u,
+                          color: COLORS.navy,
+                        }}
+                      >
+                        Order #{o.id}
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: F.reg,
+                          fontSize: 9.5 * u,
+                          color: COLORS.navy,
+                        }}
+                      >
+                        {o.date}
+                      </Text>
+                    </View>
                   </View>
-                  <View>
+                  <View style={{ alignItems: "flex-end" }}>
                     <Text
                       style={{
                         fontFamily: F.semi,
                         fontSize: 14 * u,
-                        color: COLORS.navy,
+                        color: s.color,
                       }}
                     >
-                      Order #{o.id}
+                      {s.label}
                     </Text>
                     <Text
                       style={{
@@ -105,51 +136,31 @@ export default function History() {
                         color: COLORS.navy,
                       }}
                     >
-                      {o.date}
+                      Status
                     </Text>
                   </View>
                 </View>
-                <View style={{ alignItems: "flex-end" }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "flex-end",
+                    marginTop: 8 * u,
+                  }}
+                >
+                  <Thumb width={140 * u} height={58} color={o.color} />
                   <Text
                     style={{
-                      fontFamily: F.semi,
-                      fontSize: 14 * u,
-                      color: s.color,
-                    }}
-                  >
-                    {s.label}
-                  </Text>
-                  <Text
-                    style={{
-                      fontFamily: F.reg,
-                      fontSize: 9.5 * u,
+                      fontFamily: F.bold,
+                      fontSize: 22 * u,
                       color: COLORS.navy,
                     }}
                   >
-                    Status
+                    {peso(o.price)}
                   </Text>
                 </View>
-              </View>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "flex-end",
-                  marginTop: 8 * u,
-                }}
-              >
-                <Thumb width={140 * u} height={58} color={o.color} />
-                <Text
-                  style={{
-                    fontFamily: F.bold,
-                    fontSize: 22 * u,
-                    color: COLORS.navy,
-                  }}
-                >
-                  {peso(o.price)}
-                </Text>
-              </View>
-            </Card>
+              </Card>
+            </TouchableOpacity>
           );
         })}
       </View>

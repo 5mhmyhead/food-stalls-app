@@ -1,22 +1,27 @@
 import { itemCount, openScreen, useCatalog } from "@/catalogStore";
-import CategoryIcon from "@/components/CategoryIcon";
+import { CategoryCard } from "@/components/CategoryIcon";
 import {
   COLORS,
   Card,
   F,
-  Heading,
   IconBtn,
   LabelBtn,
   Page,
   PillButton,
-  SearchBar,
   Thumb,
   u,
 } from "@/components/Ui";
 import { peso } from "@/data/products";
 import { openPayout } from "@/payoutStore";
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function Menu() {
   const { products, categories } = useCatalog();
@@ -52,11 +57,47 @@ export default function Menu() {
         </>
       }
     >
-      <SearchBar
-        placeholder="search for a meal..."
-        value={query}
-        onChangeText={setQuery}
-      />
+      {/* Search Bar matching mockup */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          height: 42 * u,
+          backgroundColor: "#E8DBD9",
+          borderWidth: 1,
+          borderColor: "#E8708C",
+          borderRadius: 11 * u,
+          paddingHorizontal: 12 * u,
+        }}
+      >
+        <Ionicons name="search-outline" size={20 * u} color="#E8708C" />
+        <View
+          style={{
+            width: 1,
+            height: 22 * u,
+            backgroundColor: "#E8708C",
+            marginHorizontal: 10 * u,
+          }}
+        />
+        <TextInput
+          placeholder="search for a meal..."
+          placeholderTextColor="#243759"
+          value={query}
+          onChangeText={setQuery}
+          style={{
+            flex: 1,
+            fontFamily: F.reg,
+            fontSize: 12.5 * u,
+            color: "#243759",
+            paddingVertical: 0,
+          }}
+        />
+        {query.length > 0 && (
+          <TouchableOpacity onPress={() => setQuery("")} hitSlop={8}>
+            <Ionicons name="close-circle" size={16 * u} color="#E8708C" />
+          </TouchableOpacity>
+        )}
+      </View>
 
       <View style={{ flexDirection: "row", gap: 10 * u, marginTop: 12 * u }}>
         <PillButton
@@ -77,38 +118,12 @@ export default function Menu() {
         contentContainerStyle={{ paddingHorizontal: 22 * u, gap: 12 * u }}
       >
         {categories.map((c) => (
-          <TouchableOpacity
+          <CategoryCard
             key={c.id}
-            activeOpacity={0.85}
+            category={c}
+            count={itemCount(products, c)}
             onPress={() => setQuery(c.id === "all" ? "" : c.name)}
-          >
-            <View
-              style={{
-                width: 150 * u,
-                height: 122 * u,
-                borderRadius: 18 * u,
-                backgroundColor: c.color,
-                borderWidth: 1,
-                borderColor: COLORS.pink,
-                padding: 14 * u,
-                justifyContent: "space-between",
-              }}
-            >
-              <CategoryIcon name={c.icon} size={32 * u} color={COLORS.navy} />
-              <View>
-                <Heading size={26}>{c.name}</Heading>
-                <Text
-                  style={{
-                    fontFamily: F.reg,
-                    fontSize: 10.5 * u,
-                    color: COLORS.navy,
-                  }}
-                >
-                  {itemCount(products, c)} items
-                </Text>
-              </View>
-            </View>
-          </TouchableOpacity>
+          />
         ))}
       </ScrollView>
 
@@ -130,7 +145,12 @@ export default function Menu() {
         {shown.map((p) => (
           <Card key={p.id} style={{ padding: 8 * u }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Thumb width={140 * u} height={90} color={p.color} />
+              <Thumb
+                width={140 * u}
+                height={90}
+                color={p.color}
+                source={p.image ? { uri: p.image } : undefined}
+              />
               <View
                 style={{ flex: 1, alignItems: "flex-end", paddingRight: 6 * u }}
               >

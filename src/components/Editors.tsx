@@ -8,7 +8,7 @@ import {
   saveProduct,
   useCatalog,
 } from "@/catalogStore";
-import CategoryIcon from "@/components/CategoryIcon";
+import CategoryIcon, { CategoryCard } from "@/components/CategoryIcon";
 import {
   COLORS,
   Card,
@@ -23,8 +23,10 @@ import {
 } from "@/components/Ui";
 import { peso } from "@/data/products";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import * as ImagePicker from "expo-image-picker";
+import React, { useState } from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -51,14 +53,38 @@ const ICONS = [
   "crescent",
 ];
 
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+
+function LabeledField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View>
+      <Text
+        style={{
+          fontFamily: F.semi,
+          fontSize: 11 * u,
+          color: COLORS.navy,
+          marginBottom: 6 * u,
+        }}
+      >
+        {label}
+      </Text>
+      {children}
+    </View>
+  );
+}
+
 function Input({
-  placeholder,
   value,
   onChangeText,
   multiline,
   numeric,
 }: {
-  placeholder: string;
   value: string;
   onChangeText: (t: string) => void;
   multiline?: boolean;
@@ -68,19 +94,19 @@ function Input({
     <TextInput
       value={value}
       onChangeText={onChangeText}
-      placeholder={placeholder}
-      placeholderTextColor={COLORS.navy}
       multiline={multiline}
       keyboardType={numeric ? "numeric" : "default"}
+      selectionColor="#E8708C"
       style={{
         backgroundColor: COLORS.card,
-        borderRadius: 8 * u,
-        height: (multiline ? 76 : 30) * u,
-        paddingHorizontal: 10 * u,
-        paddingTop: multiline ? 8 * u : 0,
+        borderRadius: 10 * u,
+        height: (multiline ? 84 : 40) * u,
+        paddingHorizontal: 12 * u,
+        paddingTop: multiline ? 10 * u : 0,
+        paddingBottom: 0,
         textAlignVertical: multiline ? "top" : "center",
         fontFamily: F.reg,
-        fontSize: 10.5 * u,
+        fontSize: 12 * u,
         color: COLORS.navy,
       }}
     />
@@ -116,7 +142,12 @@ export function EditProducts() {
                 gap: 10 * u,
               }}
             >
-              <Thumb width={120 * u} height={70} color={p.color} />
+              <Thumb
+                width={120 * u}
+                height={70}
+                color={p.color}
+                source={p.image ? { uri: p.image } : undefined}
+              />
               <View style={{ flex: 1, alignItems: "flex-end" }}>
                 <Text
                   style={{
@@ -191,6 +222,7 @@ export function EditCategories() {
 
       <View style={{ gap: 12 * u, marginTop: 16 * u }}>
         {categories.map((c) => {
+          const count = itemCount(products, c);
           const row = (
             <Card style={{ padding: 12 * u }}>
               <View
@@ -233,7 +265,7 @@ export function EditCategories() {
                       color: COLORS.navy,
                     }}
                   >
-                    {itemCount(products, c)} items
+                    {`${count} ${count === 1 ? "item" : "items"}`}
                   </Text>
                 </View>
               </View>
@@ -270,6 +302,8 @@ export function EditItem() {
   );
   const [price, setPrice] = useState(existing ? String(existing.price) : "");
   const [stock, setStock] = useState(existing ? String(existing.stock) : "");
+  const [image, setImage] = useState<string | undefined>(existing?.image);
+  const [imageMessage, setImageMessage] = useState("");
 
   const priceNum = parseFloat(price);
   const stockNum = parseInt(stock || "0", 10);
@@ -278,6 +312,23 @@ export function EditItem() {
     !isNaN(priceNum) &&
     priceNum >= 0 &&
     !isNaN(stockNum);
+
+  const pickImage = async () => {
+    setImageMessage("");
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.7,
+    });
+    if (result.canceled) return;
+    const asset = result.assets[0];
+    if (asset.fileSize && asset.fileSize > MAX_IMAGE_BYTES) {
+      setImageMessage("That image is over 2MB. Pick a smaller one.");
+      return;
+    }
+    setImage(asset.uri);
+  };
 
   const onSave = () => {
     if (!valid) return;
@@ -288,6 +339,7 @@ export function EditItem() {
       category,
       price: priceNum,
       stock: stockNum,
+      image,
     });
     goBack();
   };
@@ -298,107 +350,141 @@ export function EditItem() {
       bubbles={bubbles}
       left={<IconBtn name="arrow-back" onPress={goBack} />}
     >
-      <Card
-        style={{
-          alignItems: "center",
-          justifyContent: "center",
-          height: 130 * u,
-        }}
-      >
-        <Ionicons name="image-outline" size={30 * u} color={COLORS.navy} />
-        <Text
+      <TouchableOpacity activeOpacity={0.85} onPress={pickImage}>
+        <Card
           style={{
-            fontFamily: F.bold,
-            fontSize: 11 * u,
-            color: COLORS.navy,
-            marginTop: 6 * u,
+            height: 150 * u,
+            padding: 0,
+            overflow: "hidden",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          Upload Files
-        </Text>
-        <Text
-          style={{ fontFamily: F.reg, fontSize: 8 * u, color: COLORS.navy }}
-        >
-          (maximum file upload size of 2MB)
-        </Text>
-      </Card>
+          {image ? (
+            <Image
+              source={{ uri: image }}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="cover"
+            />
+          ) : (
+            <>
+              <Ionicons
+                name="image-outline"
+                size={30 * u}
+                color={COLORS.navy}
+              />
+              <Text
+                style={{
+                  fontFamily: F.bold,
+                  fontSize: 11 * u,
+                  color: COLORS.navy,
+                  marginTop: 6 * u,
+                }}
+              >
+                Upload Files
+              </Text>
+              <Text
+                style={{
+                  fontFamily: F.reg,
+                  fontSize: 8 * u,
+                  color: COLORS.navy,
+                }}
+              >
+                (maximum file upload size of 2MB)
+              </Text>
+            </>
+          )}
+        </Card>
+      </TouchableOpacity>
 
-      <View style={{ marginTop: 14 * u, marginBottom: 10 * u }}>
+      {image ? (
+        <View style={{ flexDirection: "row", gap: 16 * u, marginTop: 8 * u }}>
+          <TouchableOpacity activeOpacity={0.85} onPress={pickImage}>
+            <Text
+              style={{
+                fontFamily: F.semi,
+                fontSize: 11 * u,
+                color: COLORS.pink,
+              }}
+            >
+              Change image
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setImage(undefined)}
+          >
+            <Text
+              style={{
+                fontFamily: F.semi,
+                fontSize: 11 * u,
+                color: COLORS.navy,
+              }}
+            >
+              Remove image
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      {imageMessage ? (
+        <Text
+          style={{
+            fontFamily: F.reg,
+            fontSize: 11 * u,
+            color: COLORS.pink,
+            marginTop: 8 * u,
+          }}
+        >
+          {imageMessage}
+        </Text>
+      ) : null}
+
+      <View style={{ marginTop: 18 * u, marginBottom: 12 * u }}>
         <Heading size={30}>Product Details</Heading>
       </View>
 
-      <View style={{ gap: 8 * u }}>
-        <Input placeholder="Product Name" value={name} onChangeText={setName} />
-        <Input
-          placeholder="Product Description (optional)"
-          value={description}
-          onChangeText={setDescription}
-          multiline
-        />
-      </View>
+      <View style={{ gap: 14 * u }}>
+        <LabeledField label="Product Name">
+          <Input value={name} onChangeText={setName} />
+        </LabeledField>
 
-      <Text
-        style={{
-          fontFamily: F.bold,
-          fontSize: 11 * u,
-          color: COLORS.navy,
-          marginTop: 14 * u,
-          marginBottom: 8 * u,
-        }}
-      >
-        Category
-      </Text>
+        <LabeledField label="Product Description (optional)">
+          <Input value={description} onChangeText={setDescription} multiline />
+        </LabeledField>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ marginHorizontal: -22 * u }}
-        contentContainerStyle={{ paddingHorizontal: 22 * u, gap: 10 * u }}
-      >
-        {choices.map((c) => {
-          const active = c.name === category;
-          return (
-            <TouchableOpacity
-              key={c.id}
-              activeOpacity={0.85}
-              onPress={() => setCategory(c.name)}
-              style={{
-                width: 110 * u,
-                height: 84 * u,
-                borderRadius: 14 * u,
-                backgroundColor: c.color,
-                borderWidth: active ? 1.5 : 1,
-                borderColor: active ? COLORS.pink : COLORS.border,
-                padding: 10 * u,
-                justifyContent: "space-between",
-              }}
-            >
-              <CategoryIcon name={c.icon} size={22 * u} color={COLORS.navy} />
-              <Heading size={18}>{c.name}</Heading>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+        <LabeledField label="Category">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ marginHorizontal: -22 * u }}
+            contentContainerStyle={{ paddingHorizontal: 22 * u, gap: 10 * u }}
+          >
+            {choices.map((c) => (
+              <CategoryCard
+                key={c.id}
+                category={c}
+                compact
+                selected={c.name === category}
+                onPress={() => setCategory(c.name)}
+              />
+            ))}
+          </ScrollView>
+        </LabeledField>
 
-      <View style={{ gap: 8 * u, marginTop: 12 * u }}>
-        <Input
-          placeholder="Product Price"
-          value={price}
-          onChangeText={setPrice}
-          numeric
-        />
-        <Input
-          placeholder="Product Stock"
-          value={stock}
-          onChangeText={setStock}
-          numeric
-        />
+        <LabeledField label="Product Price">
+          <Input value={price} onChangeText={setPrice} numeric />
+        </LabeledField>
+
+        <LabeledField label="Product Stock">
+          <Input value={stock} onChangeText={setStock} numeric />
+        </LabeledField>
       </View>
 
       <View
         style={{
           flexDirection: "row",
-          marginTop: 16 * u,
+          marginTop: 20 * u,
           opacity: valid ? 1 : 0.5,
         }}
       >

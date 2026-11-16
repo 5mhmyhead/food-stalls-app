@@ -27,7 +27,7 @@ type State = {
 const initial: State = {
   screen: null,
   role: "admin",
-  username: "Dave",
+  username: "User",
   email: "",
   password: null,
   accessCode: "admin123",
@@ -49,6 +49,12 @@ export function openSettings(screen: Exclude<SettingsScreen, null>) {
 
 export function closeSettings() {
   set({ ...state, screen: null });
+}
+
+export function setUsername(name: string) {
+  const clean = name.trim();
+  if (!clean) return;
+  set({ ...state, username: clean });
 }
 
 export function updateProfile(username: string, email: string): string | null {
