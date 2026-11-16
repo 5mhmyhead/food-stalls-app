@@ -8,7 +8,7 @@ import * as SettingsPages from "@/components/SettingsPages";
 import TabBar from "@/components/TabBar";
 import { useManageState } from "@/manageStore";
 import { useOrderDetailsState } from "@/orderDetailsStore";
-import { useOrderState } from "@/orderStore";
+import { closeProduct, useOrderState } from "@/orderStore";
 import { usePayoutOpen } from "@/payoutStore";
 import { useSettings } from "@/settingsStore";
 import { Tabs } from "expo-router";
@@ -16,19 +16,11 @@ import {
   memo,
   useEffect,
   useRef,
-  useState,
   type ComponentType,
   type ReactElement,
   type ReactNode,
 } from "react";
-import {
-  Animated,
-  Dimensions,
-  Easing,
-  Platform,
-  StyleSheet,
-  View,
-} from "react-native";
+import { Animated, Dimensions, Platform, StyleSheet, View } from "react-native";
 
 const { width: SW, height: SH } = Dimensions.get("window");
 const native = Platform.OS !== "web";
@@ -59,38 +51,24 @@ function Slide({
   visible: boolean;
   children?: ReactNode;
 }): ReactElement | null {
-  const [rendered, setRendered] = useState(visible);
-  const progress = useRef(new Animated.Value(visible ? 1 : 0)).current;
+  const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (visible) {
-      setRendered(true);
-      Animated.spring(progress, {
-        toValue: 1,
-        damping: 26,
-        stiffness: 260,
-        mass: 0.85,
-        overshootClamping: true,
-        useNativeDriver: native,
-      }).start();
-      return undefined;
+    if (!visible) {
+      progress.setValue(0);
+      return;
     }
-
-    if (rendered) {
-      Animated.timing(progress, {
-        toValue: 0,
-        duration: 200,
-        easing: Easing.bezier(0.32, 0.72, 0, 1),
-        useNativeDriver: native,
-      }).start(({ finished }) => {
-        if (finished) setRendered(false);
-      });
-    }
-
-    return undefined;
+    Animated.spring(progress, {
+      toValue: 1,
+      damping: 26,
+      stiffness: 260,
+      mass: 0.85,
+      overshootClamping: true,
+      useNativeDriver: native,
+    }).start();
   }, [visible]);
 
-  if (!rendered) return null;
+  if (!visible) return null;
 
   const translateX = progress.interpolate({
     inputRange: [0, 1],
@@ -99,7 +77,6 @@ function Slide({
 
   return (
     <Animated.View
-      pointerEvents={visible ? "auto" : "none"}
       style={[
         StyleSheet.absoluteFill,
         { zIndex: 100, elevation: 100, transform: [{ translateX }] },
@@ -117,38 +94,24 @@ function SlideUp({
   visible: boolean;
   children?: ReactNode;
 }): ReactElement | null {
-  const [rendered, setRendered] = useState(visible);
-  const progress = useRef(new Animated.Value(visible ? 1 : 0)).current;
+  const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (visible) {
-      setRendered(true);
-      Animated.spring(progress, {
-        toValue: 1,
-        damping: 26,
-        stiffness: 250,
-        mass: 0.85,
-        overshootClamping: true,
-        useNativeDriver: native,
-      }).start();
-      return undefined;
+    if (!visible) {
+      progress.setValue(0);
+      return;
     }
-
-    if (rendered) {
-      Animated.timing(progress, {
-        toValue: 0,
-        duration: 210,
-        easing: Easing.bezier(0.32, 0.72, 0, 1),
-        useNativeDriver: native,
-      }).start(({ finished }) => {
-        if (finished) setRendered(false);
-      });
-    }
-
-    return undefined;
+    Animated.spring(progress, {
+      toValue: 1,
+      damping: 26,
+      stiffness: 250,
+      mass: 0.85,
+      overshootClamping: true,
+      useNativeDriver: native,
+    }).start();
   }, [visible]);
 
-  if (!rendered) return null;
+  if (!visible) return null;
 
   const translateY = progress.interpolate({
     inputRange: [0, 1],
@@ -157,7 +120,6 @@ function SlideUp({
 
   return (
     <Animated.View
-      pointerEvents={visible ? "auto" : "none"}
       style={[
         StyleSheet.absoluteFill,
         { zIndex: 100, elevation: 100, transform: [{ translateY }] },
@@ -168,13 +130,23 @@ function SlideUp({
   );
 }
 
-const AppOverlays = memo(function AppOverlays(): ReactElement {
+const AppOverlays = memo(function AppOverlays(): ReactElement | null {
   const payoutOpen = usePayoutOpen();
   const { open: orderDetailsOpen } = useOrderDetailsState();
   const { selectedId } = useOrderState();
   const { open: manageOpen } = useManageState();
-  const { screen } = useCatalog();
+  const { screen, products } = useCatalog();
   const { screen: settingsScreen } = useSettings();
+
+  const validProduct = Boolean(
+    selectedId && products.some((p) => p.id === selectedId),
+  );
+
+  useEffect(() => {
+    if (selectedId && !validProduct) {
+      closeProduct();
+    }
+  }, [selectedId, validProduct]);
 
   const currentCatalog = String(screen ?? "");
   const currentSettings = String(settingsScreen ?? "");
@@ -183,6 +155,21 @@ const AppOverlays = memo(function AppOverlays(): ReactElement {
     currentCatalog === "products" || currentCatalog === "item";
   const showCategories =
     currentCatalog === "categories" || currentCatalog === "category";
+
+  const anyActive =
+    showProducts ||
+    showCategories ||
+    currentCatalog === "item" ||
+    currentCatalog === "category" ||
+    Boolean(manageOpen) ||
+    validProduct ||
+    Boolean(payoutOpen) ||
+    Boolean(orderDetailsOpen) ||
+    currentSettings === "account" ||
+    currentSettings === "security" ||
+    currentSettings === "preferences";
+
+  if (!anyActive) return null;
 
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
@@ -206,7 +193,7 @@ const AppOverlays = memo(function AppOverlays(): ReactElement {
         <ManageOrders />
       </Slide>
 
-      <SlideUp visible={Boolean(selectedId)}>
+      <SlideUp visible={validProduct}>
         <ProductDetail />
       </SlideUp>
 
@@ -235,12 +222,12 @@ const AppOverlays = memo(function AppOverlays(): ReactElement {
 
 export default function TabsLayout(): ReactElement {
   return (
-    <View style={{ flex: 1, overflow: "hidden" }}>
+    <View style={{ flex: 1 }}>
       <Tabs
         detachInactiveScreens={false}
         screenOptions={{
           headerShown: false,
-          lazy: true,
+          lazy: false,
           freezeOnBlur: false,
           animation: "none",
         }}

@@ -34,7 +34,7 @@ import {
 } from "react-native";
 
 const { width: SW, height: SH } = Dimensions.get("window");
-const FW = Math.min(SW, SH * (390 / 844));
+const FW = Platform.OS === "web" ? Math.min(SW, SH * (390 / 844)) : SW;
 const u = FW / 390;
 const native = Platform.OS !== "web";
 

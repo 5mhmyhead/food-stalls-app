@@ -44,7 +44,7 @@ import OrdersIcon from "@/assets/icons/orders.svg";
 import SettingsIcon from "@/assets/icons/settings.svg";
 
 const { width: SW, height: SH } = Dimensions.get("window");
-const FW = Math.min(SW, SH * (390 / 844));
+const FW = Platform.OS === "web" ? Math.min(SW, SH * (390 / 844)) : SW;
 
 const ACTIVE = "#e76d8a";
 const INACTIVE = "#FFFFFF";
@@ -299,8 +299,10 @@ export default function TabBar({ state, descriptors, navigation }: any) {
           return (
             <Pressable
               key={route.key}
-              onPress={handleSelect}
-              hitSlop={10}
+              onPressIn={handleSelect}
+              hitSlop={12}
+              pressRetentionOffset={20}
+              unstable_pressDelay={0}
               style={[
                 styles.tab,
                 { width: isFocused ? PILL_WIDTH : slotWidth },

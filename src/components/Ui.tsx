@@ -22,7 +22,7 @@ import {
 } from "react-native";
 
 const { width: SW, height: SH } = Dimensions.get("window");
-export const FW = Math.min(SW, SH * (390 / 844));
+const FW = Platform.OS === "web" ? Math.min(SW, SH * (390 / 844)) : SW;
 export const u = FW / 390;
 
 export const COLORS = {
@@ -171,7 +171,8 @@ export function IconBtn({
     <Pressable
       onPress={onPress}
       disabled={!onPress}
-      hitSlop={8}
+      hitSlop={12}
+      pressRetentionOffset={20}
       unstable_pressDelay={0}
       style={({ pressed }) => ({
         width: 38 * u,
@@ -200,7 +201,8 @@ export function LabelBtn({
   return (
     <Pressable
       onPress={onPress}
-      hitSlop={6}
+      hitSlop={12}
+      pressRetentionOffset={20}
       unstable_pressDelay={0}
       style={({ pressed }) => ({
         height: 38 * u,
@@ -247,7 +249,8 @@ export function PillButton({
   return (
     <Pressable
       onPress={onPress}
-      hitSlop={6}
+      hitSlop={12}
+      pressRetentionOffset={20}
       unstable_pressDelay={0}
       style={({ pressed }) => ({
         flex: 1,
@@ -320,7 +323,12 @@ export function SearchBar({
         }}
       />
       {value.length > 0 && (
-        <Pressable onPress={() => onChangeText("")} hitSlop={8}>
+        <Pressable
+          onPress={() => onChangeText("")}
+          hitSlop={12}
+          pressRetentionOffset={20}
+          unstable_pressDelay={0}
+        >
           <Ionicons name="close-circle" size={16 * u} color="#E8708C" />
         </Pressable>
       )}
@@ -378,6 +386,8 @@ export function Page({
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        scrollEventThrottle={16}
+        directionalLockEnabled
         contentContainerStyle={{ paddingBottom: 110 * u }}
       >
         <View
