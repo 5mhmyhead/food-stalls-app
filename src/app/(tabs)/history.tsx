@@ -47,9 +47,8 @@ export default function History() {
         { size: 55, top: 40, left: 215 },
       ]}
       left={
-        <IconBtn name="arrow-back" onPress={() => router.navigate("/home")} />
+        <IconBtn name="arrow-back" onPress={() => router.navigate("/orders")} />
       }
-      right={<IconBtn name="menu" />}
     >
       {orders.length === 0 ? (
         <Text

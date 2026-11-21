@@ -51,7 +51,6 @@ export default function ManageOrders() {
         { size: 55, top: 30, left: 215 },
       ]}
       left={<IconBtn name="arrow-back" onPress={closeManage} />}
-      right={<IconBtn name="menu" />}
     >
       <Card style={{ padding: 14 * u }}>
         <Heading size={30}>Order Page</Heading>

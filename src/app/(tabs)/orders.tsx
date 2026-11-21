@@ -6,7 +6,6 @@ import {
   F,
   FW,
   Heading,
-  IconBtn,
   LabelBtn,
   Page,
   Thumb,
@@ -64,7 +63,6 @@ export default function Orders() {
           onPress={() => openPayout()}
         />
       }
-      right={<IconBtn name="funnel-outline" />}
     >
       {/* Search Bar matching mockup */}
       <View

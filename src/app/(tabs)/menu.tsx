@@ -4,12 +4,11 @@ import {
   COLORS,
   Card,
   F,
-  IconBtn,
   LabelBtn,
   Page,
   PillButton,
   Thumb,
-  u,
+  u
 } from "@/components/Ui";
 import { peso } from "@/data/products";
 import { openPayout } from "@/payoutStore";
@@ -49,12 +48,6 @@ export default function Menu() {
           icon="cart-outline"
           onPress={() => openPayout()}
         />
-      }
-      right={
-        <>
-          <IconBtn name="notifications-outline" />
-          <IconBtn name="funnel-outline" />
-        </>
       }
     >
       {/* Search Bar matching mockup */}

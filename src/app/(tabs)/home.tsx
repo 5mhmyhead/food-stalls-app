@@ -14,7 +14,6 @@ import {
   Card,
   F,
   Heading,
-  IconBtn,
   Page,
   Thumb,
   TintedIcon,
@@ -145,8 +144,8 @@ function Welcome() {
       <Text
         style={{
           fontFamily: F.title,
-          fontSize: 26 * u,
-          lineHeight: 32 * u,
+          fontSize: 34 * u,
+          lineHeight: 39 * u,
           color: "#FFFFFF",
           marginTop: 10 * u,
         }}
@@ -156,8 +155,8 @@ function Welcome() {
       <Text
         style={{
           fontFamily: F.reg,
-          fontSize: 11 * u,
-          lineHeight: 16 * u,
+          fontSize: 13 * u,
+          lineHeight: 19 * u,
           color: "rgba(255,255,255,0.92)",
           marginTop: 6 * u,
           marginBottom: 18 * u,
@@ -799,7 +798,6 @@ export default function Home() {
         { size: 185, top: -74, left: 182 },
         { size: 54, top: 84, left: 178 },
       ]}
-      right={<IconBtn name="funnel-outline" />}
     >
       <View style={{ gap: 14 * u, paddingBottom: 28 * u }}>
         <Welcome />

@@ -1,3 +1,4 @@
+import Home from "@/app/(tabs)/home";
 import { useCatalog } from "@/catalogStore";
 import {
   COLORS,
@@ -79,7 +80,7 @@ export default function PayoutScreen() {
         { size: 55, top: 30, left: 215 },
       ]}
       left={<IconBtn name="arrow-back" onPress={closePayout} />}
-      right={<IconBtn name="menu" />}
+      right={<IconBtn name="menu" onPress={Home} />}
     >
       <View
         style={{
