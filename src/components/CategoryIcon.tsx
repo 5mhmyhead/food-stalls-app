@@ -57,19 +57,19 @@ export function CategoryCard({
   compact?: boolean;
 }) {
   const length = Math.max(category.name.length, 1);
-  const charWidth = compact ? 11.5 : 15.5;
-  const baseSize = compact ? 18 : 26;
-  const minWidth = compact ? 96 : 150;
-  const maxWidth = compact ? 200 : 330;
-  const sidePad = compact ? 10 : 14;
+  const charWidth = compact ? 10 : 12.5;
+  const baseSize = compact ? 16 : 21;
+  const minWidth = compact ? 120 : 148;
+  const maxWidth = compact ? 190 : 240;
+  const sidePad = compact ? 10 : 13;
 
   const width = Math.min(
-    Math.max(minWidth, length * charWidth + sidePad * 2 + 4),
+    Math.max(minWidth, length * charWidth + sidePad * 2 + 24),
     maxWidth,
   );
   const fit = (width - sidePad * 2) / (length * charWidth);
   const fontSize =
-    fit < 1 ? Math.max(Math.floor(baseSize * fit), 10) : baseSize;
+    fit < 1 ? Math.max(Math.floor(baseSize * fit), 11) : baseSize;
 
   return (
     <TouchableOpacity
@@ -80,37 +80,49 @@ export function CategoryCard({
       <View
         style={{
           width: width * u,
-          height: (compact ? 84 : 122) * u,
+          height: (compact ? 62 : 76) * u,
           borderRadius: (compact ? 14 : 18) * u,
           backgroundColor: category.color,
-          borderWidth: selected ? 1.5 : 1,
-          borderColor: selected || !compact ? COLORS.pink : COLORS.border,
-          padding: sidePad * u,
+          borderWidth: selected ? 1.5 : 0,
+          borderColor: selected ? COLORS.pink : "transparent",
+          paddingHorizontal: sidePad * u,
+          paddingVertical: (compact ? 7 : 9) * u,
           justifyContent: "space-between",
         }}
       >
-        <CategoryIcon
-          name={category.icon}
-          size={(compact ? 22 : 32) * u}
-          color={COLORS.navy}
-        />
-        <View>
-          <Text
-            numberOfLines={1}
-            style={{
-              fontFamily: F.title,
-              fontSize: fontSize * u,
-              lineHeight: fontSize * 1.15 * u,
-              color: COLORS.navy,
-            }}
-          >
-            {category.name}
-          </Text>
+        {/* Top Row: Category Title aligned right */}
+        <Text
+          numberOfLines={1}
+          style={{
+            fontFamily: F.title,
+            fontSize: fontSize * u,
+            lineHeight: fontSize * 1.15 * u,
+            color: COLORS.navy,
+            textAlign: "right",
+          }}
+        >
+          {category.name}
+        </Text>
+
+        {/* Bottom Row: Icon on left, Item count on right */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+          }}
+        >
+          <CategoryIcon
+            name={category.icon}
+            size={(compact ? 22 : 28) * u}
+            color={COLORS.navy}
+          />
+
           {count !== undefined ? (
             <Text
               style={{
                 fontFamily: F.reg,
-                fontSize: 10.5 * u,
+                fontSize: 10 * u,
                 color: COLORS.navy,
               }}
             >

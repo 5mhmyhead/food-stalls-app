@@ -1,3 +1,4 @@
+import AddImageIcon from "@/assets/icons/add-image.svg";
 import {
   deleteCategory,
   deleteProduct,
@@ -8,7 +9,7 @@ import {
   saveProduct,
   useCatalog,
 } from "@/catalogStore";
-import CategoryIcon, { CategoryCard } from "@/components/CategoryIcon";
+import CategoryIcon from "@/components/CategoryIcon";
 import {
   COLORS,
   Card,
@@ -19,12 +20,13 @@ import {
   Page,
   PillButton,
   Thumb,
+  TintedIcon,
   u,
 } from "@/components/Ui";
 import { peso } from "@/data/products";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Image,
   ScrollView,
@@ -38,6 +40,12 @@ import {
 const bubbles = [
   { size: 130, top: -65, left: 100 },
   { size: 55, top: 30, left: 215 },
+];
+
+const editItemBubbles = [
+  { size: 145, top: -45, left: 72 },
+  { size: 95, top: 45, left: 182 },
+  { size: 28, top: 8, left: 224 },
 ];
 
 const ICONS = [
@@ -55,37 +63,15 @@ const ICONS = [
 
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
-function LabeledField({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <View>
-      <Text
-        style={{
-          fontFamily: F.semi,
-          fontSize: 11 * u,
-          color: COLORS.navy,
-          marginBottom: 6 * u,
-        }}
-      >
-        {label}
-      </Text>
-      {children}
-    </View>
-  );
-}
-
-function Input({
+function PlaceholderInput({
   value,
+  placeholder,
   onChangeText,
   multiline,
   numeric,
 }: {
   value: string;
+  placeholder: string;
   onChangeText: (t: string) => void;
   multiline?: boolean;
   numeric?: boolean;
@@ -93,16 +79,18 @@ function Input({
   return (
     <TextInput
       value={value}
+      placeholder={placeholder}
+      placeholderTextColor="#5C6475"
       onChangeText={onChangeText}
       multiline={multiline}
       keyboardType={numeric ? "numeric" : "default"}
       selectionColor="#E8708C"
       style={{
         backgroundColor: COLORS.card,
-        borderRadius: 10 * u,
-        height: (multiline ? 84 : 40) * u,
-        paddingHorizontal: 12 * u,
-        paddingTop: multiline ? 10 * u : 0,
+        borderRadius: (multiline ? 14 : 10) * u,
+        height: (multiline ? 96 : 38) * u,
+        paddingHorizontal: 14 * u,
+        paddingTop: multiline ? 12 * u : 0,
         paddingBottom: 0,
         textAlignVertical: multiline ? "top" : "center",
         fontFamily: F.reg,
@@ -292,8 +280,7 @@ export function EditCategories() {
 export function EditItem() {
   const { products, categories, editingId } = useCatalog();
   const existing = products.find((p) => p.id === editingId);
-  const custom = categories.filter((c) => c.id !== "all");
-  const choices = custom.length > 0 ? custom : categories;
+  const choices = categories;
 
   const [name, setName] = useState(existing?.name ?? "");
   const [description, setDescription] = useState(existing?.description ?? "");
@@ -346,14 +333,18 @@ export function EditItem() {
 
   return (
     <Page
-      headerHeight={100}
-      bubbles={bubbles}
+      headerHeight={144}
+      bubbles={editItemBubbles}
       left={<IconBtn name="arrow-back" onPress={goBack} />}
+      right={null}
     >
+      {/* Upload Box */}
       <TouchableOpacity activeOpacity={0.85} onPress={pickImage}>
         <Card
           style={{
-            height: 150 * u,
+            height: 190 * u,
+            borderRadius: 20 * u,
+            backgroundColor: COLORS.card,
             padding: 0,
             overflow: "hidden",
             alignItems: "center",
@@ -368,17 +359,18 @@ export function EditItem() {
             />
           ) : (
             <>
-              <Ionicons
-                name="image-outline"
-                size={30 * u}
+              <TintedIcon
+                Icon={AddImageIcon}
+                width={34 * u}
+                height={34 * u}
                 color={COLORS.navy}
               />
               <Text
                 style={{
                   fontFamily: F.bold,
-                  fontSize: 11 * u,
+                  fontSize: 12.5 * u,
                   color: COLORS.navy,
-                  marginTop: 6 * u,
+                  marginTop: 10 * u,
                 }}
               >
                 Upload Files
@@ -386,8 +378,9 @@ export function EditItem() {
               <Text
                 style={{
                   fontFamily: F.reg,
-                  fontSize: 8 * u,
-                  color: COLORS.navy,
+                  fontSize: 9.5 * u,
+                  color: "#5C6475",
+                  marginTop: 2 * u,
                 }}
               >
                 (maximum file upload size of 2MB)
@@ -440,51 +433,111 @@ export function EditItem() {
         </Text>
       ) : null}
 
-      <View style={{ marginTop: 18 * u, marginBottom: 12 * u }}>
-        <Heading size={30}>Product Details</Heading>
+      {/* Product Details Section */}
+      <View style={{ marginTop: 22 * u, marginBottom: 10 * u }}>
+        <Heading size={32}>Product Details</Heading>
       </View>
 
-      <View style={{ gap: 14 * u }}>
-        <LabeledField label="Product Name">
-          <Input value={name} onChangeText={setName} />
-        </LabeledField>
+      <View style={{ gap: 10 * u }}>
+        <PlaceholderInput
+          value={name}
+          placeholder="Product Name"
+          onChangeText={setName}
+        />
 
-        <LabeledField label="Product Description (optional)">
-          <Input value={description} onChangeText={setDescription} multiline />
-        </LabeledField>
+        <PlaceholderInput
+          value={description}
+          placeholder="Product Description (optional)"
+          onChangeText={setDescription}
+          multiline
+        />
+      </View>
 
-        <LabeledField label="Category">
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={{ marginHorizontal: -22 * u }}
-            contentContainerStyle={{ paddingHorizontal: 22 * u, gap: 10 * u }}
-          >
-            {choices.map((c) => (
-              <CategoryCard
+      {/* Grey Category Cards (scoped only to EditItem) */}
+      <View style={{ marginTop: 18 * u }}>
+        <Text
+          style={{
+            fontFamily: F.bold,
+            fontSize: 13 * u,
+            color: COLORS.navy,
+            marginBottom: 8 * u,
+          }}
+        >
+          Category
+        </Text>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ marginHorizontal: -22 * u }}
+          contentContainerStyle={{ paddingHorizontal: 22 * u, gap: 10 * u }}
+        >
+          {choices.map((c) => {
+            const selected = c.name === category;
+            return (
+              <TouchableOpacity
                 key={c.id}
-                category={c}
-                compact
-                selected={c.name === category}
+                activeOpacity={0.85}
                 onPress={() => setCategory(c.name)}
-              />
-            ))}
-          </ScrollView>
-        </LabeledField>
+              >
+                <View
+                  style={{
+                    width: 130 * u,
+                    height: 88 * u,
+                    borderRadius: 16 * u,
+                    backgroundColor: COLORS.card,
+                    borderWidth: selected ? 1.2 : 0,
+                    borderColor: selected ? "#E8708C" : "transparent",
+                    paddingHorizontal: 12 * u,
+                    paddingVertical: 10 * u,
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <CategoryIcon
+                    name={c.icon}
+                    size={22 * u}
+                    color={COLORS.navy}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      fontFamily: F.title,
+                      fontSize: 19 * u,
+                      lineHeight: 23 * u,
+                      color: COLORS.navy,
+                    }}
+                  >
+                    {c.name}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
 
-        <LabeledField label="Product Price">
-          <Input value={price} onChangeText={setPrice} numeric />
-        </LabeledField>
+      {/* Price & Stock Inputs */}
+      <View style={{ gap: 10 * u, marginTop: 16 * u }}>
+        <PlaceholderInput
+          value={price}
+          placeholder="Product Price"
+          onChangeText={setPrice}
+          numeric
+        />
 
-        <LabeledField label="Product Stock">
-          <Input value={stock} onChangeText={setStock} numeric />
-        </LabeledField>
+        <PlaceholderInput
+          value={stock}
+          placeholder="Product Stock"
+          onChangeText={setStock}
+          numeric
+        />
       </View>
 
       <View
         style={{
           flexDirection: "row",
           marginTop: 20 * u,
+          paddingBottom: 24 * u,
           opacity: valid ? 1 : 0.5,
         }}
       >

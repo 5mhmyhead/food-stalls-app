@@ -1,4 +1,5 @@
-import { session, useLoggedIn } from "@/auth";
+import { initAuth, session, useAuthInitialized, useLoggedIn } from "@/auth";
+import { hydrateCatalog } from "@/catalogStore";
 import {
   AuthScreen,
   BottomDecor,
@@ -10,8 +11,12 @@ import {
   authStyles,
   bubble,
 } from "@/components/AuthKit";
-import { clearNotice, showNotice, useManageState } from "@/manageStore";
-import { setUsername as saveUsername } from "@/settingsStore";
+import {
+  clearNotice,
+  hydrateOrders,
+  showNotice,
+  useManageState,
+} from "@/manageStore";
 import {
   PlayfairDisplay_900Black_Italic,
   useFonts,
@@ -136,16 +141,18 @@ function Toast() {
 function SignInForm({ go }: { go: Go }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [usernameError, setUsernameError] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const onSignIn = () => {
-    if (!username.trim()) {
-      setUsernameError("Please enter a username.");
-      return;
+  const onSignIn = async () => {
+    if (submitting) return;
+    setErrorMsg("");
+    setSubmitting(true);
+    const err = await session.signInWithCredentials(username, password);
+    setSubmitting(false);
+    if (err) {
+      setErrorMsg(err);
     }
-    setUsernameError("");
-    saveUsername(username);
-    session.signIn();
   };
 
   return (
@@ -174,15 +181,25 @@ function SignInForm({ go }: { go: Go }) {
       <CatLogo />
       <Text style={authStyles.title}>Sign in</Text>
       <Field
-        label="Username"
+        label="Username or Email"
         icon="person-circle-outline"
         value={username}
         onChangeText={(text) => {
           setUsername(text);
-          if (text.trim()) setUsernameError("");
+          if (errorMsg) setErrorMsg("");
         }}
       />
-      {usernameError ? (
+      <Field
+        label="Password"
+        icon="lock-closed-outline"
+        value={password}
+        onChangeText={(text) => {
+          setPassword(text);
+          if (errorMsg) setErrorMsg("");
+        }}
+        secure
+      />
+      {errorMsg ? (
         <Text
           style={{
             fontFamily: "Poppins_400Regular",
@@ -193,20 +210,16 @@ function SignInForm({ go }: { go: Go }) {
             marginLeft: 4 * u,
           }}
         >
-          {usernameError}
+          {errorMsg}
         </Text>
       ) : null}
-      <Field
-        label="Password"
-        icon="lock-closed-outline"
-        value={password}
-        onChangeText={setPassword}
-        secure
-      />
       <Text style={authStyles.forgot} onPress={() => go("recover")}>
         Forgot Password?
       </Text>
-      <PrimaryButton title="Sign in" onPress={onSignIn} />
+      <PrimaryButton
+        title={submitting ? "Signing in..." : "Sign in"}
+        onPress={onSignIn}
+      />
       <FooterLink
         prefix="Don't have an account?"
         link="Sign up"
@@ -221,6 +234,26 @@ function SignUpForm({ go }: { go: Go }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const onSignUp = async () => {
+    if (submitting) return;
+    setErrorMsg("");
+    setSubmitting(true);
+    const err = await session.signUpAccount({
+      username,
+      email,
+      password,
+      confirm,
+    });
+    setSubmitting(false);
+    if (err) {
+      setErrorMsg(err);
+      return;
+    }
+    go("signin", "Account Created\nSuccessfully!");
+  };
 
   return (
     <AuthScreen
@@ -248,31 +281,57 @@ function SignUpForm({ go }: { go: Go }) {
         label="Username"
         icon="person-circle-outline"
         value={username}
-        onChangeText={setUsername}
+        onChangeText={(text) => {
+          setUsername(text);
+          if (errorMsg) setErrorMsg("");
+        }}
       />
       <Field
         label="Email"
         icon="mail-outline"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(text) => {
+          setEmail(text);
+          if (errorMsg) setErrorMsg("");
+        }}
       />
       <Field
         label="Password"
         icon="lock-closed-outline"
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(text) => {
+          setPassword(text);
+          if (errorMsg) setErrorMsg("");
+        }}
         secure
       />
       <Field
         label="Confirm Password"
         icon="lock-closed-outline"
         value={confirm}
-        onChangeText={setConfirm}
+        onChangeText={(text) => {
+          setConfirm(text);
+          if (errorMsg) setErrorMsg("");
+        }}
         secure
       />
+      {errorMsg ? (
+        <Text
+          style={{
+            fontFamily: "Poppins_400Regular",
+            fontSize: 10 * u,
+            color: "#E8708C",
+            marginTop: -6 * u,
+            marginBottom: 4 * u,
+            marginLeft: 4 * u,
+          }}
+        >
+          {errorMsg}
+        </Text>
+      ) : null}
       <PrimaryButton
-        title="Sign up"
-        onPress={() => go("signin", "Account Created\nSuccessfully!")}
+        title={submitting ? "Creating..." : "Sign up"}
+        onPress={onSignUp}
       />
       <FooterLink
         prefix="Already have an account?"
@@ -287,6 +346,25 @@ function RecoverForm({ go }: { go: Go }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const onRecover = async () => {
+    if (submitting) return;
+    setErrorMsg("");
+    setSubmitting(true);
+    const err = await session.recoverAccount({
+      email,
+      password,
+      confirm,
+    });
+    setSubmitting(false);
+    if (err) {
+      setErrorMsg(err);
+      return;
+    }
+    go("signin", "Recovery Email\nSent!");
+  };
 
   return (
     <AuthScreen
@@ -316,25 +394,48 @@ function RecoverForm({ go }: { go: Go }) {
         label="Enter your email address"
         icon="mail-outline"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(text) => {
+          setEmail(text);
+          if (errorMsg) setErrorMsg("");
+        }}
       />
       <Field
         label="Enter your new password"
         icon="lock-closed-outline"
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(text) => {
+          setPassword(text);
+          if (errorMsg) setErrorMsg("");
+        }}
         secure
       />
       <Field
         label="Confirm your new password"
         icon="lock-closed-outline"
         value={confirm}
-        onChangeText={setConfirm}
+        onChangeText={(text) => {
+          setConfirm(text);
+          if (errorMsg) setErrorMsg("");
+        }}
         secure
       />
+      {errorMsg ? (
+        <Text
+          style={{
+            fontFamily: "Poppins_400Regular",
+            fontSize: 10 * u,
+            color: "#E8708C",
+            marginTop: -6 * u,
+            marginBottom: 4 * u,
+            marginLeft: 4 * u,
+          }}
+        >
+          {errorMsg}
+        </Text>
+      ) : null}
       <PrimaryButton
-        title="Reset Password"
-        onPress={() => go("signin", "Account Recovered\nSuccessfully!")}
+        title={submitting ? "Sending..." : "Reset Password"}
+        onPress={onRecover}
       />
       <FooterLink
         prefix="Remember your credentials?"
@@ -415,6 +516,7 @@ function AuthFlow() {
 
 export default function RootLayout() {
   const loggedIn = useLoggedIn();
+  const authInitialized = useAuthInitialized();
   const [fontsLoaded] = useFonts({
     PlayfairDisplay_900Black_Italic,
     Poppins_400Regular,
@@ -426,6 +528,18 @@ export default function RootLayout() {
   const isFirstRender = useRef(true);
 
   useEffect(() => {
+    initAuth();
+  }, []);
+
+  useEffect(() => {
+    if (loggedIn) {
+      hydrateCatalog();
+      hydrateOrders();
+    }
+  }, [loggedIn]);
+
+  useEffect(() => {
+    if (!authInitialized) return;
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
@@ -439,9 +553,9 @@ export default function RootLayout() {
       overshootClamping: true,
       useNativeDriver: native,
     }).start();
-  }, [loggedIn]);
+  }, [loggedIn, authInitialized]);
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded || !authInitialized) return null;
 
   return (
     <View style={{ flex: 1, backgroundColor: "#FDEDEA", overflow: "hidden" }}>
@@ -452,7 +566,8 @@ export default function RootLayout() {
           <Stack
             screenOptions={{
               headerShown: false,
-              animation: "slide_from_right",
+              animation: "none",
+              contentStyle: { backgroundColor: "#FDEDEA" },
             }}
           />
         ) : (

@@ -399,11 +399,15 @@ export function AuthScreen({
 export const authStyles = StyleSheet.create({
   title: {
     fontFamily: "PlayfairDisplay_900Black_Italic",
-    fontSize: 36 * u,
-    lineHeight: 42 * u,
+    fontSize: 40 * u,
+    lineHeight: 52 * u,
+    letterSpacing: 0.6 * u,
     color: "#243759",
     textAlign: "center",
-    marginBottom: 16 * u,
+    paddingBottom: 6 * u,
+    paddingHorizontal: 8 * u,
+    marginBottom: 12 * u,
+    includeFontPadding: false,
   },
   forgot: {
     fontFamily: "Poppins_600SemiBold",

@@ -1,3 +1,4 @@
+import { session } from "@/auth";
 import {
   AuthScreen,
   BottomDecor,
@@ -9,11 +10,14 @@ import {
   authStyles,
   bubble,
 } from "@/components/AuthKit";
+import { showNotice } from "@/manageStore";
 import { type Href, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Animated, Dimensions, Easing, Platform, Text } from "react-native";
 
-const { width: SW } = Dimensions.get("window");
+const { width: SW, height: SH } = Dimensions.get("window");
+const FW = Platform.OS === "web" ? Math.min(SW, SH * (390 / 844)) : SW;
+const u = FW / 390;
 const native = Platform.OS !== "web";
 
 export default function Recover() {
@@ -21,6 +25,8 @@ export default function Recover() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const translateX = useRef(new Animated.Value(SW)).current;
 
   useEffect(() => {
@@ -41,6 +47,24 @@ export default function Recover() {
       easing: Easing.bezier(0.32, 0.72, 0, 1),
       useNativeDriver: native,
     }).start(() => router.replace(path));
+  };
+
+  const onRecover = async () => {
+    if (submitting) return;
+    setErrorMsg("");
+    setSubmitting(true);
+    const err = await session.recoverAccount({
+      email,
+      password,
+      confirm,
+    });
+    setSubmitting(false);
+    if (err) {
+      setErrorMsg(err);
+      return;
+    }
+    showNotice("Recovery Email\nSent!", "auth");
+    navigateWithSlide("/");
   };
 
   return (
@@ -72,25 +96,48 @@ export default function Recover() {
           label="Enter your email address"
           icon="mail-outline"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(text) => {
+            setEmail(text);
+            if (errorMsg) setErrorMsg("");
+          }}
         />
         <Field
           label="Enter your new password"
           icon="lock-closed-outline"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(text) => {
+            setPassword(text);
+            if (errorMsg) setErrorMsg("");
+          }}
           secure
         />
         <Field
           label="Confirm your new password"
           icon="lock-closed-outline"
           value={confirm}
-          onChangeText={setConfirm}
+          onChangeText={(text) => {
+            setConfirm(text);
+            if (errorMsg) setErrorMsg("");
+          }}
           secure
         />
+        {errorMsg ? (
+          <Text
+            style={{
+              fontFamily: "Poppins_400Regular",
+              fontSize: 10 * u,
+              color: "#E8708C",
+              marginTop: -6 * u,
+              marginBottom: 4 * u,
+              marginLeft: 4 * u,
+            }}
+          >
+            {errorMsg}
+          </Text>
+        ) : null}
         <PrimaryButton
-          title="Reset Password"
-          onPress={() => navigateWithSlide("/")}
+          title={submitting ? "Sending..." : "Reset Password"}
+          onPress={onRecover}
         />
         <FooterLink
           prefix="Remember your credentials?"

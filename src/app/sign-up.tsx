@@ -1,3 +1,4 @@
+import { session } from "@/auth";
 import {
   AuthScreen,
   BottomDecor,
@@ -9,11 +10,14 @@ import {
   authStyles,
   bubble,
 } from "@/components/AuthKit";
+import { showNotice } from "@/manageStore";
 import { type Href, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Animated, Dimensions, Easing, Platform, Text } from "react-native";
 
-const { width: SW } = Dimensions.get("window");
+const { width: SW, height: SH } = Dimensions.get("window");
+const FW = Platform.OS === "web" ? Math.min(SW, SH * (390 / 844)) : SW;
+const u = FW / 390;
 const native = Platform.OS !== "web";
 
 export default function SignUp() {
@@ -22,6 +26,8 @@ export default function SignUp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const translateX = useRef(new Animated.Value(SW)).current;
 
   useEffect(() => {
@@ -42,6 +48,25 @@ export default function SignUp() {
       easing: Easing.bezier(0.32, 0.72, 0, 1),
       useNativeDriver: native,
     }).start(() => router.replace(path));
+  };
+
+  const onSignUp = async () => {
+    if (submitting) return;
+    setErrorMsg("");
+    setSubmitting(true);
+    const err = await session.signUpAccount({
+      username,
+      email,
+      password,
+      confirm,
+    });
+    setSubmitting(false);
+    if (err) {
+      setErrorMsg(err);
+      return;
+    }
+    showNotice("Account Created\nSuccessfully!", "auth");
+    navigateWithSlide("/");
   };
 
   return (
@@ -71,29 +96,58 @@ export default function SignUp() {
           label="Username"
           icon="person-circle-outline"
           value={username}
-          onChangeText={setUsername}
+          onChangeText={(text) => {
+            setUsername(text);
+            if (errorMsg) setErrorMsg("");
+          }}
         />
         <Field
           label="Email"
           icon="mail-outline"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(text) => {
+            setEmail(text);
+            if (errorMsg) setErrorMsg("");
+          }}
         />
         <Field
           label="Password"
           icon="lock-closed-outline"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(text) => {
+            setPassword(text);
+            if (errorMsg) setErrorMsg("");
+          }}
           secure
         />
         <Field
           label="Confirm Password"
           icon="lock-closed-outline"
           value={confirm}
-          onChangeText={setConfirm}
+          onChangeText={(text) => {
+            setConfirm(text);
+            if (errorMsg) setErrorMsg("");
+          }}
           secure
         />
-        <PrimaryButton title="Sign up" onPress={() => navigateWithSlide("/")} />
+        {errorMsg ? (
+          <Text
+            style={{
+              fontFamily: "Poppins_400Regular",
+              fontSize: 10 * u,
+              color: "#E8708C",
+              marginTop: -6 * u,
+              marginBottom: 4 * u,
+              marginLeft: 4 * u,
+            }}
+          >
+            {errorMsg}
+          </Text>
+        ) : null}
+        <PrimaryButton
+          title={submitting ? "Creating..." : "Sign up"}
+          onPress={onSignUp}
+        />
         <FooterLink
           prefix="Already have an account?"
           link="Sign in"

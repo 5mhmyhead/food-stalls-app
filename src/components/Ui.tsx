@@ -3,13 +3,20 @@ import { LinearGradient } from "expo-linear-gradient";
 import {
   Children,
   cloneElement,
+  createContext,
   isValidElement,
   memo,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
   type ComponentType,
   type ReactNode,
 } from "react";
 import {
+  Animated,
   Dimensions,
+  Easing,
   Image,
   Platform,
   Pressable,
@@ -22,8 +29,15 @@ import {
 } from "react-native";
 
 const { width: SW, height: SH } = Dimensions.get("window");
-const FW = Platform.OS === "web" ? Math.min(SW, SH * (390 / 844)) : SW;
+export const FW = Platform.OS === "web" ? Math.min(SW, SH * (390 / 844)) : SW;
 export const u = FW / 390;
+
+const ENTER_MS = 340;
+const LEAVE_MS = 240;
+const NATIVE = Platform.OS !== "web";
+
+type Leave = (done: () => void) => void;
+const LeaveContext = createContext<Leave | null>(null);
 
 export const COLORS = {
   bg: "#FDEDEA",
@@ -168,9 +182,15 @@ export function IconBtn({
   name: keyof typeof Ionicons.glyphMap;
   onPress?: () => void;
 }) {
+  const leave = useContext(LeaveContext);
+  const isBack = name === "arrow-back";
+
+  const handlePress =
+    isBack && leave && onPress ? () => leave(onPress) : onPress;
+
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       disabled={!onPress}
       hitSlop={12}
       pressRetentionOffset={20}
@@ -382,96 +402,131 @@ export function Page({
   right?: ReactNode;
   children: ReactNode;
 }) {
+  const slideY = useRef(new Animated.Value(SH)).current;
+  const slideX = useRef(new Animated.Value(0)).current;
+  const leaving = useRef(false);
+
+  useEffect(() => {
+    Animated.timing(slideY, {
+      toValue: 0,
+      duration: ENTER_MS,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: NATIVE,
+    }).start();
+  }, [slideY]);
+
+  const leave = useCallback<Leave>(
+    (done) => {
+      if (leaving.current) return;
+      leaving.current = true;
+      Animated.timing(slideX, {
+        toValue: -SW,
+        duration: LEAVE_MS,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: NATIVE,
+      }).start(() => done());
+    },
+    [slideX],
+  );
+
   return (
-    <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        scrollEventThrottle={16}
-        directionalLockEnabled
-        contentContainerStyle={{ paddingBottom: 110 * u }}
+    <LeaveContext.Provider value={leave}>
+      <Animated.View
+        style={{
+          flex: 1,
+          backgroundColor: COLORS.bg,
+          transform: [{ translateY: slideY }, { translateX: slideX }],
+        }}
       >
-        <View
-          style={{
-            width: "100%",
-            height: headerHeight * u,
-            backgroundColor: COLORS.pink,
-            borderBottomLeftRadius: 28 * u,
-            borderBottomRightRadius: 28 * u,
-            overflow: "hidden",
-          }}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          scrollEventThrottle={16}
+          directionalLockEnabled
+          contentContainerStyle={{ paddingBottom: 110 * u }}
         >
           <View
             style={{
               width: "100%",
-              maxWidth: FW,
-              height: "100%",
-              alignSelf: "center",
+              height: headerHeight * u,
+              backgroundColor: COLORS.pink,
+              borderBottomLeftRadius: 28 * u,
+              borderBottomRightRadius: 28 * u,
+              overflow: "hidden",
             }}
           >
-            {bubbles.map((b, i) => (
-              <LinearGradient
-                key={i}
-                colors={["rgba(255,255,255,0.34)", "rgba(255,255,255,0.0)"]}
-                start={{ x: 0.25, y: 0 }}
-                end={{ x: 0.75, y: 1 }}
-                style={{
-                  position: "absolute",
-                  width: b.size * u,
-                  height: b.size * u,
-                  borderRadius: (b.size * u) / 2,
-                  top: b.top * u,
-                  ...(b.left !== undefined ? { left: b.left * u } : {}),
-                  ...(b.right !== undefined ? { right: b.right * u } : {}),
-                }}
-              />
-            ))}
+            <View
+              style={{
+                width: "100%",
+                maxWidth: FW,
+                height: "100%",
+                alignSelf: "center",
+              }}
+            >
+              {bubbles.map((b, i) => (
+                <LinearGradient
+                  key={i}
+                  colors={["rgba(255,255,255,0.34)", "rgba(255,255,255,0.0)"]}
+                  start={{ x: 0.25, y: 0 }}
+                  end={{ x: 0.75, y: 1 }}
+                  style={{
+                    position: "absolute",
+                    width: b.size * u,
+                    height: b.size * u,
+                    borderRadius: (b.size * u) / 2,
+                    top: b.top * u,
+                    ...(b.left !== undefined ? { left: b.left * u } : {}),
+                    ...(b.right !== undefined ? { right: b.right * u } : {}),
+                  }}
+                />
+              ))}
 
-            {(left || right) && (
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  paddingHorizontal: 22 * u,
-                  paddingTop: 46 * u,
-                }}
-              >
+              {(left || right) && (
                 <View
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    gap: 8 * u,
+                    justifyContent: "space-between",
+                    paddingHorizontal: 22 * u,
+                    paddingTop: 46 * u,
                   }}
                 >
-                  {left}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 8 * u,
+                    }}
+                  >
+                    {left}
+                  </View>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 8 * u,
+                    }}
+                  >
+                    {right}
+                  </View>
                 </View>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 8 * u,
-                  }}
-                >
-                  {right}
-                </View>
-              </View>
-            )}
+              )}
+            </View>
           </View>
-        </View>
 
-        <View
-          style={{
-            width: "100%",
-            maxWidth: FW,
-            alignSelf: "center",
-            paddingHorizontal: 22 * u,
-            marginTop: 16 * u,
-          }}
-        >
-          {children}
-        </View>
-      </ScrollView>
-    </View>
+          <View
+            style={{
+              width: "100%",
+              maxWidth: FW,
+              alignSelf: "center",
+              paddingHorizontal: 22 * u,
+              marginTop: 16 * u,
+            }}
+          >
+            {children}
+          </View>
+        </ScrollView>
+      </Animated.View>
+    </LeaveContext.Provider>
   );
 }

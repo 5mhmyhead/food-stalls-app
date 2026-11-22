@@ -34,6 +34,55 @@ const stepBtn = {
   justifyContent: "center" as const,
 };
 
+function OrderThumbStack({
+  thumbs,
+}: {
+  thumbs: { image?: string; color: string }[];
+}) {
+  const list = thumbs.slice(0, 3);
+  if (list.length === 0) return null;
+
+  const w = 136 * u;
+  const h = 64;
+  const stepX = 6 * u;
+  const stepY = 5 * u;
+
+  // Render back-to-front so the 1st ordered item sits on top in front
+  const reversed = [...list].map((item, idx) => ({ item, idx })).reverse();
+
+  return (
+    <View
+      style={{
+        width: w + (list.length - 1) * stepX,
+        height: h * u + (list.length - 1) * stepY,
+        position: "relative",
+      }}
+    >
+      {reversed.map(({ item, idx }) => (
+        <View
+          key={idx}
+          style={{
+            position: "absolute",
+            left: idx * stepX,
+            bottom: idx * stepY,
+            borderRadius: 12 * u,
+            overflow: "hidden",
+            borderWidth: list.length > 1 ? 1 : 0,
+            borderColor: "rgba(255,255,255,0.65)",
+          }}
+        >
+          <Thumb
+            width={w}
+            height={h}
+            color={item.color}
+            source={item.image ? { uri: item.image } : undefined}
+          />
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export default function Orders() {
   const { products, categories } = useCatalog();
   const { qty } = useOrderState();
@@ -49,6 +98,16 @@ export default function Orders() {
       )
     : products;
 
+  const orderedProducts = products.filter((p) => (qty[p.id] ?? 0) > 0);
+  const totalItems = orderedProducts.reduce(
+    (sum, p) => sum + (qty[p.id] ?? 0),
+    0,
+  );
+  const totalPrice = orderedProducts.reduce(
+    (sum, p) => sum + p.price * (qty[p.id] ?? 0),
+    0,
+  );
+
   return (
     <Page
       headerHeight={145}
@@ -63,8 +122,8 @@ export default function Orders() {
           onPress={() => openPayout()}
         />
       }
+      right={null}
     >
-      {/* Search Bar matching mockup */}
       <View
         style={{
           flexDirection: "row",
@@ -129,6 +188,77 @@ export default function Orders() {
         </Text>
       </TouchableOpacity>
 
+      {/* Active Order Preview Stack (1, 2, or up to 3 pictures) */}
+      {orderedProducts.length > 0 ? (
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => openPayout()}
+          style={{ marginTop: 14 * u }}
+        >
+          <Card
+            style={{
+              padding: 12 * u,
+              borderRadius: 18 * u,
+              borderWidth: 1,
+              borderColor: "#E8708C",
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 8 * u,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: F.bold,
+                  fontSize: 13.5 * u,
+                  color: COLORS.navy,
+                }}
+              >
+                Current Order ({totalItems}{" "}
+                {totalItems === 1 ? "item" : "items"})
+              </Text>
+              <Text
+                style={{
+                  fontFamily: F.semi,
+                  fontSize: 11 * u,
+                  color: COLORS.pink,
+                }}
+              >
+                Tap to Payout
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "flex-end",
+              }}
+            >
+              <OrderThumbStack
+                thumbs={orderedProducts.slice(0, 3).map((p) => ({
+                  image: p.image,
+                  color: p.color,
+                }))}
+              />
+              <Text
+                style={{
+                  fontFamily: F.bold,
+                  fontSize: 22 * u,
+                  color: COLORS.navy,
+                }}
+              >
+                {peso(totalPrice)}
+              </Text>
+            </View>
+          </Card>
+        </TouchableOpacity>
+      ) : null}
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -165,6 +295,7 @@ export default function Orders() {
           flexWrap: "wrap",
           gap: 12 * u,
           marginTop: 16 * u,
+          paddingBottom: 24 * u,
         }}
       >
         {shown.map((p) => {

@@ -1,3 +1,4 @@
+import { useCatalog } from "@/catalogStore";
 import {
   COLORS,
   Card,
@@ -23,8 +24,61 @@ const native = Platform.OS !== "web";
 const tabs: OrderStatus[] = ["Pending", "Complete", "Cancelled"];
 const PAD = 4 * u;
 
+function OrderThumbStack({
+  thumbs,
+  fallbackColor,
+}: {
+  thumbs: { image?: string; color: string }[];
+  fallbackColor: string;
+}) {
+  const list =
+    thumbs.length > 0 ? thumbs.slice(0, 3) : [{ color: fallbackColor }];
+  const w = 136 * u;
+  const h = 64;
+  const stepX = 6 * u;
+  const stepY = 5 * u;
+
+  // Render back-to-front so index 0 (the first ordered item) sits on top in front
+  const reversed = [...list].map((item, idx) => ({ item, idx })).reverse();
+
+  return (
+    <View
+      style={{
+        width: w + (list.length - 1) * stepX,
+        height: h * u + (list.length - 1) * stepY,
+        position: "relative",
+      }}
+    >
+      {reversed.map(({ item, idx }) => (
+        <View
+          key={idx}
+          style={{
+            position: "absolute",
+            left: idx * stepX,
+            bottom: idx * stepY,
+            borderRadius: 12 * u,
+            overflow: "hidden",
+            borderWidth: list.length > 1 ? 1 : 0,
+            borderColor: "rgba(255,255,255,0.65)",
+          }}
+        >
+          <Thumb
+            width={w}
+            height={h}
+            color={item.color}
+            source={item.image ? { uri: item.image } : undefined}
+          />
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export default function ManageOrders() {
   const { orders } = useManageState();
+  const { products } = useCatalog();
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
   const [tab, setTab] = useState<OrderStatus>("Pending");
   const [barWidth, setBarWidth] = useState(0);
   const pillX = useRef(new Animated.Value(0)).current;
@@ -51,6 +105,7 @@ export default function ManageOrders() {
         { size: 55, top: 30, left: 215 },
       ]}
       left={<IconBtn name="arrow-back" onPress={closeManage} />}
+      right={null}
     >
       <Card style={{ padding: 14 * u }}>
         <Heading size={30}>Order Page</Heading>
@@ -112,7 +167,7 @@ export default function ManageOrders() {
         })}
       </View>
 
-      <View style={{ gap: 12 * u, marginTop: 14 * u }}>
+      <View style={{ gap: 12 * u, marginTop: 14 * u, paddingBottom: 24 * u }}>
         {shown.length === 0 && (
           <Text
             style={{
@@ -127,114 +182,134 @@ export default function ManageOrders() {
           </Text>
         )}
 
-        {shown.map((o) => (
-          <Card key={o.id} style={{ padding: 12 * u }}>
-            <View
-              style={{ flexDirection: "row", justifyContent: "space-between" }}
-            >
-              <View style={{ flex: 1, paddingRight: 8 * u }}>
-                <Text
-                  style={{
-                    fontFamily: F.bold,
-                    fontSize: 19 * u,
-                    color: COLORS.navy,
-                  }}
-                >
-                  Order #{o.id}
-                </Text>
-                {o.mode ? (
+        {shown.map((o) => {
+          const firstThreeThumbs = (o.items ?? []).slice(0, 3).map((item) => {
+            const prod = productMap.get(item.id);
+            return {
+              image: (item as any).image ?? prod?.image,
+              color: prod?.color ?? o.color,
+            };
+          });
+
+          return (
+            <Card key={o.id} style={{ padding: 12 * u }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <View style={{ flex: 1, paddingRight: 8 * u }}>
                   <Text
                     style={{
-                      fontFamily: F.semi,
-                      fontSize: 10 * u,
-                      color: COLORS.pink,
+                      fontFamily: F.bold,
+                      fontSize: 19 * u,
+                      color: COLORS.navy,
                     }}
                   >
-                    {o.mode}
+                    Order #{o.id}
                   </Text>
-                ) : null}
+                  {o.mode ? (
+                    <Text
+                      style={{
+                        fontFamily: F.semi,
+                        fontSize: 10 * u,
+                        color: COLORS.pink,
+                      }}
+                    >
+                      {o.mode}
+                    </Text>
+                  ) : null}
+                </View>
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text
+                    style={{
+                      fontFamily: F.bold,
+                      fontSize: 19 * u,
+                      color: COLORS.navy,
+                    }}
+                  >
+                    {peso(o.price)}
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: F.reg,
+                      fontSize: 9.5 * u,
+                      color: COLORS.navy,
+                    }}
+                  >
+                    {o.date}
+                  </Text>
+                </View>
               </View>
-              <View style={{ alignItems: "flex-end" }}>
-                <Text
-                  style={{
-                    fontFamily: F.bold,
-                    fontSize: 19 * u,
-                    color: COLORS.navy,
-                  }}
-                >
-                  {peso(o.price)}
-                </Text>
+
+              {o.items && o.items.length > 0 ? (
                 <Text
                   style={{
                     fontFamily: F.reg,
-                    fontSize: 9.5 * u,
+                    fontSize: 10 * u,
                     color: COLORS.navy,
+                    marginTop: 6 * u,
                   }}
                 >
-                  {o.date}
+                  {o.items.map((i) => `${i.qty}x ${i.name}`).join(", ")}
                 </Text>
-              </View>
-            </View>
+              ) : null}
 
-            {o.items && o.items.length > 0 ? (
-              <Text
+              <View
                 style={{
-                  fontFamily: F.reg,
-                  fontSize: 10 * u,
-                  color: COLORS.navy,
-                  marginTop: 6 * u,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "flex-end",
+                  marginTop: 10 * u,
                 }}
               >
-                {o.items.map((i) => `${i.qty}x ${i.name}`).join(", ")}
-              </Text>
-            ) : null}
+                <OrderThumbStack
+                  thumbs={firstThreeThumbs}
+                  fallbackColor={o.color}
+                />
 
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "flex-end",
-                marginTop: 8 * u,
-              }}
-            >
-              <Thumb width={140 * u} height={70} color={o.color} />
-
-              {o.status === "Pending" ? (
-                <View style={{ flexDirection: "row", gap: 10 * u }}>
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    onPress={() => setOrderStatus(o.id, "Cancelled")}
-                    style={[actionBtn, { backgroundColor: COLORS.navy }]}
+                {o.status === "Pending" ? (
+                  <View style={{ flexDirection: "row", gap: 10 * u }}>
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={() => setOrderStatus(o.id, "Cancelled")}
+                      style={[actionBtn, { backgroundColor: COLORS.navy }]}
+                    >
+                      <Ionicons
+                        name="close"
+                        size={22 * u}
+                        color={COLORS.cream}
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={() => setOrderStatus(o.id, "Complete")}
+                      style={[actionBtn, { backgroundColor: COLORS.pink }]}
+                    >
+                      <Ionicons
+                        name="checkmark"
+                        size={22 * u}
+                        color={COLORS.cream}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <Text
+                    style={{
+                      fontFamily: F.semi,
+                      fontSize: 14 * u,
+                      color:
+                        o.status === "Complete" ? COLORS.purple : COLORS.pink,
+                    }}
                   >
-                    <Ionicons name="close" size={22 * u} color={COLORS.cream} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    onPress={() => setOrderStatus(o.id, "Complete")}
-                    style={[actionBtn, { backgroundColor: COLORS.pink }]}
-                  >
-                    <Ionicons
-                      name="checkmark"
-                      size={22 * u}
-                      color={COLORS.cream}
-                    />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <Text
-                  style={{
-                    fontFamily: F.semi,
-                    fontSize: 14 * u,
-                    color:
-                      o.status === "Complete" ? COLORS.purple : COLORS.pink,
-                  }}
-                >
-                  {o.status === "Complete" ? "Completed" : "Cancelled"}
-                </Text>
-              )}
-            </View>
-          </Card>
-        ))}
+                    {o.status === "Complete" ? "Completed" : "Cancelled"}
+                  </Text>
+                )}
+              </View>
+            </Card>
+          );
+        })}
       </View>
     </Page>
   );

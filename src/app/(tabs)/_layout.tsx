@@ -1,4 +1,4 @@
-import { useCatalog } from "@/catalogStore";
+import { closeCatalog, useCatalog } from "@/catalogStore";
 import * as Editors from "@/components/Editors";
 import * as ManageOrdersMod from "@/components/ManageOrders";
 import * as OrderDetailsMod from "@/components/OrderDetails";
@@ -6,12 +6,12 @@ import * as PayoutScreenMod from "@/components/PayoutScreen";
 import * as ProductDetailMod from "@/components/ProductDetail";
 import * as SettingsPages from "@/components/SettingsPages";
 import TabBar from "@/components/TabBar";
-import { useManageState } from "@/manageStore";
-import { useOrderDetailsState } from "@/orderDetailsStore";
+import { closeManage, useManageState } from "@/manageStore";
+import { closeOrderDetails, useOrderDetailsState } from "@/orderDetailsStore";
 import { closeProduct, useOrderState } from "@/orderStore";
-import { usePayoutOpen } from "@/payoutStore";
-import { useSettings } from "@/settingsStore";
-import { Tabs } from "expo-router";
+import { closePayout, usePayoutOpen } from "@/payoutStore";
+import { closeSettings, useSettings } from "@/settingsStore";
+import { Tabs, usePathname, useRouter } from "expo-router";
 import {
   memo,
   useEffect,
@@ -20,10 +20,19 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import { Animated, Dimensions, Platform, StyleSheet, View } from "react-native";
+import {
+  Animated,
+  BackHandler,
+  Dimensions,
+  Platform,
+  StyleSheet,
+  View,
+} from "react-native";
 
 const { width: SW, height: SH } = Dimensions.get("window");
 const native = Platform.OS !== "web";
+
+const TAB_ORDER = ["home", "menu", "orders", "history", "settings"];
 
 const EditProducts = (Editors as any).EditProducts as ComponentType<any>;
 const EditCategories = (Editors as any).EditCategories as ComponentType<any>;
@@ -221,16 +230,102 @@ const AppOverlays = memo(function AppOverlays(): ReactElement | null {
 });
 
 export default function TabsLayout(): ReactElement {
+  const pathname = usePathname();
+  const router = useRouter();
+  const prevIndexRef = useRef(0);
+  const slideX = useRef(new Animated.Value(0)).current;
+
+  const payoutOpen = usePayoutOpen();
+  const { open: orderDetailsOpen } = useOrderDetailsState();
+  const { selectedId } = useOrderState();
+  const { open: manageOpen } = useManageState();
+  const { screen: catalogScreen } = useCatalog();
+  const { screen: settingsScreen } = useSettings();
+
+  const foundIndex = TAB_ORDER.findIndex((t) => pathname.includes(`/${t}`));
+  const currentIndex = foundIndex >= 0 ? foundIndex : 0;
+
+  useEffect(() => {
+    const prevIndex = prevIndexRef.current;
+    if (prevIndex === currentIndex) return;
+
+    const startOffset = currentIndex > prevIndex ? SW : -SW;
+    prevIndexRef.current = currentIndex;
+
+    slideX.setValue(startOffset);
+    Animated.spring(slideX, {
+      toValue: 0,
+      damping: 26,
+      stiffness: 260,
+      mass: 0.85,
+      overshootClamping: true,
+      useNativeDriver: native,
+    }).start();
+  }, [currentIndex]);
+
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (payoutOpen) {
+        closePayout();
+        return true;
+      }
+      if (orderDetailsOpen) {
+        closeOrderDetails();
+        return true;
+      }
+      if (selectedId) {
+        closeProduct();
+        return true;
+      }
+      if (manageOpen) {
+        closeManage();
+        return true;
+      }
+      if (catalogScreen) {
+        closeCatalog();
+        return true;
+      }
+      if (settingsScreen) {
+        closeSettings();
+        return true;
+      }
+      if (currentIndex !== 0) {
+        router.replace("/home");
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [
+    payoutOpen,
+    orderDetailsOpen,
+    selectedId,
+    manageOpen,
+    catalogScreen,
+    settingsScreen,
+    currentIndex,
+  ]);
+
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: "#FDEDEA" }}>
       <Tabs
+        backBehavior="none"
         detachInactiveScreens={false}
         screenOptions={{
           headerShown: false,
           lazy: false,
           freezeOnBlur: false,
           animation: "none",
+          sceneStyle: { backgroundColor: "#FDEDEA" },
         }}
+        screenLayout={({ children }) => (
+          <Animated.View
+            style={{ flex: 1, transform: [{ translateX: slideX }] }}
+          >
+            {children}
+          </Animated.View>
+        )}
         tabBar={(props: any) => <TabBar {...props} />}
       >
         <Tabs.Screen name="index" options={{ href: null }} />
