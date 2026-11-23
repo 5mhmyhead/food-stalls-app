@@ -1,26 +1,32 @@
 import { itemCount, openScreen, useCatalog } from "@/catalogStore";
-import CategoryIcon from "@/components/CategoryIcon";
+import { CategoryCard } from "@/components/CategoryIcon";
 import {
   COLORS,
   Card,
   F,
-  Heading,
-  IconBtn,
   LabelBtn,
   Page,
   PillButton,
-  SearchBar,
   Thumb,
   u,
 } from "@/components/Ui";
-import { peso } from "@/data/products";
 import { openPayout } from "@/payoutStore";
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function Menu() {
   const { products, categories } = useCatalog();
   const [query, setQuery] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(
+    products[0]?.id ?? null,
+  );
 
   const q = query.trim().toLowerCase();
   const shown = q
@@ -33,10 +39,11 @@ export default function Menu() {
 
   return (
     <Page
-      headerHeight={145}
+      headerHeight={136}
       bubbles={[
-        { size: 140, top: -70, left: 110 },
-        { size: 50, top: 70, left: 20 },
+        { size: 112, top: 8, left: 68 },
+        { size: 185, top: -74, left: 176 },
+        { size: 48, top: 82, left: 170 },
       ]}
       left={
         <LabelBtn
@@ -45,19 +52,51 @@ export default function Menu() {
           onPress={() => openPayout()}
         />
       }
-      right={
-        <>
-          <IconBtn name="notifications-outline" />
-          <IconBtn name="funnel-outline" />
-        </>
-      }
+      right={null}
     >
-      <SearchBar
-        placeholder="search for a meal..."
-        value={query}
-        onChangeText={setQuery}
-      />
+      {/* Search Bar */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          height: 38 * u,
+          backgroundColor: "#EADBD9",
+          borderWidth: 1,
+          borderColor: "#E8708C",
+          borderRadius: 11 * u,
+          paddingHorizontal: 11 * u,
+        }}
+      >
+        <Ionicons name="search-outline" size={18 * u} color="#E8708C" />
+        <View
+          style={{
+            width: 1,
+            height: 20 * u,
+            backgroundColor: "#E8708C",
+            marginHorizontal: 9 * u,
+          }}
+        />
+        <TextInput
+          placeholder="search for a meal..."
+          placeholderTextColor="#6E7382"
+          value={query}
+          onChangeText={setQuery}
+          style={{
+            flex: 1,
+            fontFamily: F.reg,
+            fontSize: 12 * u,
+            color: "#243759",
+            paddingVertical: 0,
+          }}
+        />
+        {query.length > 0 && (
+          <TouchableOpacity onPress={() => setQuery("")} hitSlop={8}>
+            <Ionicons name="close-circle" size={16 * u} color="#E8708C" />
+          </TouchableOpacity>
+        )}
+      </View>
 
+      {/* Action Pills */}
       <View style={{ flexDirection: "row", gap: 10 * u, marginTop: 12 * u }}>
         <PillButton
           title="Edit Categories"
@@ -70,49 +109,25 @@ export default function Menu() {
         />
       </View>
 
+      {/* Horizontal Category Cards */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ marginTop: 16 * u, marginHorizontal: -22 * u }}
-        contentContainerStyle={{ paddingHorizontal: 22 * u, gap: 12 * u }}
+        style={{ marginTop: 14 * u, marginHorizontal: -22 * u }}
+        contentContainerStyle={{ paddingHorizontal: 22 * u, gap: 11 * u }}
       >
         {categories.map((c) => (
-          <TouchableOpacity
+          <CategoryCard
             key={c.id}
-            activeOpacity={0.85}
+            category={c}
+            count={itemCount(products, c)}
             onPress={() => setQuery(c.id === "all" ? "" : c.name)}
-          >
-            <View
-              style={{
-                width: 150 * u,
-                height: 122 * u,
-                borderRadius: 18 * u,
-                backgroundColor: c.color,
-                borderWidth: 1,
-                borderColor: COLORS.pink,
-                padding: 14 * u,
-                justifyContent: "space-between",
-              }}
-            >
-              <CategoryIcon name={c.icon} size={32 * u} color={COLORS.navy} />
-              <View>
-                <Heading size={26}>{c.name}</Heading>
-                <Text
-                  style={{
-                    fontFamily: F.reg,
-                    fontSize: 10.5 * u,
-                    color: COLORS.navy,
-                  }}
-                >
-                  {itemCount(products, c)} items
-                </Text>
-              </View>
-            </View>
-          </TouchableOpacity>
+          />
         ))}
       </ScrollView>
 
-      <View style={{ marginTop: 16 * u, gap: 12 * u }}>
+      {/* Product List */}
+      <View style={{ marginTop: 14 * u, gap: 12 * u, paddingBottom: 90 * u }}>
         {q !== "" && shown.length === 0 && (
           <Text
             style={{
@@ -127,45 +142,87 @@ export default function Menu() {
           </Text>
         )}
 
-        {shown.map((p) => (
-          <Card key={p.id} style={{ padding: 8 * u }}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Thumb width={140 * u} height={90} color={p.color} />
-              <View
-                style={{ flex: 1, alignItems: "flex-end", paddingRight: 6 * u }}
+        {shown.map((p) => {
+          const isSelected = p.id === selectedId;
+          return (
+            <TouchableOpacity
+              key={p.id}
+              activeOpacity={0.9}
+              onPress={() => setSelectedId(p.id)}
+            >
+              <Card
+                style={{
+                  backgroundColor: "#EADCD9",
+                  padding: 11 * u,
+                  borderRadius: 18 * u,
+                  borderWidth: isSelected ? 1.2 : 0,
+                  borderColor: isSelected ? "#E8708C" : "transparent",
+                }}
               >
-                <Text
-                  style={{
-                    fontFamily: F.semi,
-                    fontSize: 15 * u,
-                    color: COLORS.navy,
-                  }}
-                >
-                  {p.name}
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: F.reg,
-                    fontSize: 9.5 * u,
-                    color: COLORS.navy,
-                  }}
-                >
-                  {p.category}
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: F.bold,
-                    fontSize: 22 * u,
-                    color: COLORS.navy,
-                    marginTop: 14 * u,
-                  }}
-                >
-                  {peso(p.price)}
-                </Text>
-              </View>
-            </View>
-          </Card>
-        ))}
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Thumb
+                    width={142 * u}
+                    height={88}
+                    color={p.color}
+                    source={p.image ? { uri: p.image } : undefined}
+                  />
+                  <View
+                    style={{
+                      flex: 1,
+                      alignItems: "flex-end",
+                      justifyContent: "space-between",
+                      height: 86 * u,
+                      paddingRight: 4 * u,
+                      paddingVertical: 2 * u,
+                    }}
+                  >
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text
+                        numberOfLines={1}
+                        style={{
+                          fontFamily: F.semi,
+                          fontSize: 15 * u,
+                          color: COLORS.navy,
+                        }}
+                      >
+                        {p.name}
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: F.reg,
+                          fontSize: 9.5 * u,
+                          color: "#7C8190",
+                          marginTop: 2 * u,
+                        }}
+                      >
+                        {p.category}
+                      </Text>
+                    </View>
+
+                    <Text
+                      style={{
+                        fontFamily: F.bold,
+                        fontSize: 21 * u,
+                        color: COLORS.navy,
+                        letterSpacing: -0.3,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: F.semi,
+                          color: "#6C7283",
+                        }}
+                      >
+                        ₱
+                      </Text>
+                      {p.price.toFixed(2)}
+                    </Text>
+                  </View>
+                </View>
+              </Card>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </Page>
   );

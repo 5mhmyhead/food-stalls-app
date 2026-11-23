@@ -1,4 +1,5 @@
-import { session, useLoggedIn } from "@/auth";
+import { initAuth, session, useAuthInitialized, useLoggedIn } from "@/auth";
+import { hydrateCatalog } from "@/catalogStore";
 import {
   AuthScreen,
   BottomDecor,
@@ -10,7 +11,21 @@ import {
   authStyles,
   bubble,
 } from "@/components/AuthKit";
-import { clearNotice, showNotice, useManageState } from "@/manageStore";
+import {
+  clearNotice,
+  hydrateOrders,
+  showNotice,
+  useManageState,
+} from "@/manageStore";
+import {
+  PlayfairDisplay_900Black_Italic,
+  useFonts,
+} from "@expo-google-fonts/playfair-display";
+import {
+  Poppins_400Regular,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+} from "@expo-google-fonts/poppins";
 import { Stack } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -18,12 +33,13 @@ import {
   Dimensions,
   Easing,
   Platform,
+  StyleSheet,
   Text,
   View,
 } from "react-native";
 
 const { width: SW, height: SH } = Dimensions.get("window");
-const FW = Math.min(SW, SH * (390 / 844));
+const FW = Platform.OS === "web" ? Math.min(SW, SH * (390 / 844)) : SW;
 const u = FW / 390;
 const native = Platform.OS !== "web";
 
@@ -125,6 +141,19 @@ function Toast() {
 function SignInForm({ go }: { go: Go }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const onSignIn = async () => {
+    if (submitting) return;
+    setErrorMsg("");
+    setSubmitting(true);
+    const err = await session.signInWithCredentials(username, password);
+    setSubmitting(false);
+    if (err) {
+      setErrorMsg(err);
+    }
+  };
 
   return (
     <AuthScreen
@@ -152,22 +181,45 @@ function SignInForm({ go }: { go: Go }) {
       <CatLogo />
       <Text style={authStyles.title}>Sign in</Text>
       <Field
-        label="Username"
+        label="Username or Email"
         icon="person-circle-outline"
         value={username}
-        onChangeText={setUsername}
+        onChangeText={(text) => {
+          setUsername(text);
+          if (errorMsg) setErrorMsg("");
+        }}
       />
       <Field
         label="Password"
         icon="lock-closed-outline"
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(text) => {
+          setPassword(text);
+          if (errorMsg) setErrorMsg("");
+        }}
         secure
       />
+      {errorMsg ? (
+        <Text
+          style={{
+            fontFamily: "Poppins_400Regular",
+            fontSize: 10 * u,
+            color: "#E8708C",
+            marginTop: -6 * u,
+            marginBottom: 4 * u,
+            marginLeft: 4 * u,
+          }}
+        >
+          {errorMsg}
+        </Text>
+      ) : null}
       <Text style={authStyles.forgot} onPress={() => go("recover")}>
         Forgot Password?
       </Text>
-      <PrimaryButton title="Sign in" onPress={() => session.signIn()} />
+      <PrimaryButton
+        title={submitting ? "Signing in..." : "Sign in"}
+        onPress={onSignIn}
+      />
       <FooterLink
         prefix="Don't have an account?"
         link="Sign up"
@@ -182,6 +234,26 @@ function SignUpForm({ go }: { go: Go }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const onSignUp = async () => {
+    if (submitting) return;
+    setErrorMsg("");
+    setSubmitting(true);
+    const err = await session.signUpAccount({
+      username,
+      email,
+      password,
+      confirm,
+    });
+    setSubmitting(false);
+    if (err) {
+      setErrorMsg(err);
+      return;
+    }
+    go("signin", "Account Created\nSuccessfully!");
+  };
 
   return (
     <AuthScreen
@@ -209,31 +281,57 @@ function SignUpForm({ go }: { go: Go }) {
         label="Username"
         icon="person-circle-outline"
         value={username}
-        onChangeText={setUsername}
+        onChangeText={(text) => {
+          setUsername(text);
+          if (errorMsg) setErrorMsg("");
+        }}
       />
       <Field
         label="Email"
         icon="mail-outline"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(text) => {
+          setEmail(text);
+          if (errorMsg) setErrorMsg("");
+        }}
       />
       <Field
         label="Password"
         icon="lock-closed-outline"
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(text) => {
+          setPassword(text);
+          if (errorMsg) setErrorMsg("");
+        }}
         secure
       />
       <Field
         label="Confirm Password"
         icon="lock-closed-outline"
         value={confirm}
-        onChangeText={setConfirm}
+        onChangeText={(text) => {
+          setConfirm(text);
+          if (errorMsg) setErrorMsg("");
+        }}
         secure
       />
+      {errorMsg ? (
+        <Text
+          style={{
+            fontFamily: "Poppins_400Regular",
+            fontSize: 10 * u,
+            color: "#E8708C",
+            marginTop: -6 * u,
+            marginBottom: 4 * u,
+            marginLeft: 4 * u,
+          }}
+        >
+          {errorMsg}
+        </Text>
+      ) : null}
       <PrimaryButton
-        title="Sign up"
-        onPress={() => go("signin", "Account Created\nSuccessfully!")}
+        title={submitting ? "Creating..." : "Sign up"}
+        onPress={onSignUp}
       />
       <FooterLink
         prefix="Already have an account?"
@@ -248,6 +346,25 @@ function RecoverForm({ go }: { go: Go }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const onRecover = async () => {
+    if (submitting) return;
+    setErrorMsg("");
+    setSubmitting(true);
+    const err = await session.recoverAccount({
+      email,
+      password,
+      confirm,
+    });
+    setSubmitting(false);
+    if (err) {
+      setErrorMsg(err);
+      return;
+    }
+    go("signin", "Recovery Email\nSent!");
+  };
 
   return (
     <AuthScreen
@@ -277,25 +394,48 @@ function RecoverForm({ go }: { go: Go }) {
         label="Enter your email address"
         icon="mail-outline"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(text) => {
+          setEmail(text);
+          if (errorMsg) setErrorMsg("");
+        }}
       />
       <Field
         label="Enter your new password"
         icon="lock-closed-outline"
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(text) => {
+          setPassword(text);
+          if (errorMsg) setErrorMsg("");
+        }}
         secure
       />
       <Field
         label="Confirm your new password"
         icon="lock-closed-outline"
         value={confirm}
-        onChangeText={setConfirm}
+        onChangeText={(text) => {
+          setConfirm(text);
+          if (errorMsg) setErrorMsg("");
+        }}
         secure
       />
+      {errorMsg ? (
+        <Text
+          style={{
+            fontFamily: "Poppins_400Regular",
+            fontSize: 10 * u,
+            color: "#E8708C",
+            marginTop: -6 * u,
+            marginBottom: 4 * u,
+            marginLeft: 4 * u,
+          }}
+        >
+          {errorMsg}
+        </Text>
+      ) : null}
       <PrimaryButton
-        title="Reset Password"
-        onPress={() => go("signin", "Account Recovered\nSuccessfully!")}
+        title={submitting ? "Sending..." : "Reset Password"}
+        onPress={onRecover}
       />
       <FooterLink
         prefix="Remember your credentials?"
@@ -308,27 +448,132 @@ function RecoverForm({ go }: { go: Go }) {
 
 function AuthFlow() {
   const [page, setPage] = useState("signin");
+  const [prevPage, setPrevPage] = useState<string | null>(null);
+  const [direction, setDirection] = useState<1 | -1>(1);
+  const progress = useRef(new Animated.Value(1)).current;
 
   const go: Go = (next, message) => {
+    if (next === page) return;
+    const isForward = next !== "signin";
+    setDirection(isForward ? 1 : -1);
+    setPrevPage(page);
     setPage(next);
     if (message) showNotice(message, "auth");
+
+    progress.setValue(0);
+    Animated.spring(progress, {
+      toValue: 1,
+      damping: 26,
+      stiffness: 250,
+      mass: 0.9,
+      overshootClamping: true,
+      useNativeDriver: native,
+    }).start(({ finished }) => {
+      if (finished) setPrevPage(null);
+    });
   };
 
-  if (page === "signup") return <SignUpForm go={go} />;
-  if (page === "recover") return <RecoverForm go={go} />;
-  return <SignInForm go={go} />;
+  const renderForm = (key: string) => {
+    if (key === "signup") return <SignUpForm go={go} />;
+    if (key === "recover") return <RecoverForm go={go} />;
+    return <SignInForm go={go} />;
+  };
+
+  const incomingX = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [direction * SW, 0],
+  });
+
+  const outgoingX = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -direction * SW * 0.35],
+  });
+
+  return (
+    <View style={{ flex: 1, backgroundColor: "#FDEDEA", overflow: "hidden" }}>
+      {prevPage !== null && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            StyleSheet.absoluteFill,
+            { transform: [{ translateX: outgoingX }] },
+          ]}
+        >
+          {renderForm(prevPage)}
+        </Animated.View>
+      )}
+      <Animated.View
+        style={{
+          flex: 1,
+          transform: [{ translateX: incomingX }],
+        }}
+      >
+        {renderForm(page)}
+      </Animated.View>
+    </View>
+  );
 }
 
 export default function RootLayout() {
   const loggedIn = useLoggedIn();
+  const authInitialized = useAuthInitialized();
+  const [fontsLoaded] = useFonts({
+    PlayfairDisplay_900Black_Italic,
+    Poppins_400Regular,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
+  });
+
+  const rootSlide = useRef(new Animated.Value(0)).current;
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    initAuth();
+  }, []);
+
+  useEffect(() => {
+    if (loggedIn) {
+      hydrateCatalog();
+      hydrateOrders();
+    }
+  }, [loggedIn]);
+
+  useEffect(() => {
+    if (!authInitialized) return;
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    rootSlide.setValue(loggedIn ? SW : -SW);
+    Animated.spring(rootSlide, {
+      toValue: 0,
+      damping: 26,
+      stiffness: 250,
+      mass: 0.9,
+      overshootClamping: true,
+      useNativeDriver: native,
+    }).start();
+  }, [loggedIn, authInitialized]);
+
+  if (!fontsLoaded || !authInitialized) return null;
 
   return (
-    <View style={{ flex: 1 }}>
-      {loggedIn ? (
-        <Stack screenOptions={{ headerShown: false }} />
-      ) : (
-        <AuthFlow />
-      )}
+    <View style={{ flex: 1, backgroundColor: "#FDEDEA", overflow: "hidden" }}>
+      <Animated.View
+        style={{ flex: 1, transform: [{ translateX: rootSlide }] }}
+      >
+        {loggedIn ? (
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              animation: "none",
+              contentStyle: { backgroundColor: "#FDEDEA" },
+            }}
+          />
+        ) : (
+          <AuthFlow />
+        )}
+      </Animated.View>
       <Toast />
     </View>
   );

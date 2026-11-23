@@ -1,3 +1,4 @@
+import AboutIcon from "@/assets/icons/about.svg";
 import { session } from "@/auth";
 import {
   COLORS,
@@ -10,37 +11,69 @@ import {
   u,
 } from "@/components/Ui";
 import {
-  CURRENCIES,
   changePassword,
   closeSettings,
   deleteAccount,
-  saveCurrency,
   saveThreshold,
   setAccessCode,
   updateProfile,
   upgradeWithCode,
   useSettings,
 } from "@/settingsStore";
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState, type ReactNode } from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useState, type ComponentType, type ReactNode } from "react";
+import { Text, TextInput, View } from "react-native";
+
+type SvgIcon = ComponentType<{
+  width: number;
+  height: number;
+  color?: string;
+  fill?: string;
+  stroke?: string;
+}>;
+
+function TintedIcon({
+  Icon,
+  width,
+  height,
+  color,
+}: {
+  Icon: SvgIcon;
+  width: number;
+  height: number;
+  color: string;
+}) {
+  return <Icon width={width} height={height} color={color} fill={color} />;
+}
 
 type Msg = { text: string; ok: boolean } | null;
 
-const PINK = "#E8708C";
-const PINK_SOFT = "#F9C6D2";
-const FIELD_BG = "#F8E9E5";
-const FIELD_BORDER = "#F0D3CD";
+const T = {
+  label: 10,
+  body: 12.5,
+  sub: 20,
+  title: 32,
+};
+
+const S = {
+  xs: 5 * u,
+  sm: 8 * u,
+  md: 13 * u,
+  lg: 21 * u,
+  xl: 34 * u,
+};
+
+const FIELD_H = 34 * u;
+const LINE_H = 20 * u;
 
 const bubbles = [
-  { size: 130, top: -60, left: 100 },
-  { size: 70, top: 25, left: 190 },
-  { size: 24, top: 6, left: 290 },
+  { size: 145, top: -64, left: 96 },
+  { size: 78, top: 28, left: 192 },
+  { size: 28, top: 8, left: 292 },
 ];
 
 function Sub({ children }: { children: ReactNode }) {
-  return <Heading size={17}>{children}</Heading>;
+  return <Heading size={T.sub}>{children}</Heading>;
 }
 
 function Body({ children }: { children: ReactNode }) {
@@ -48,10 +81,10 @@ function Body({ children }: { children: ReactNode }) {
     <Text
       style={{
         fontFamily: F.reg,
-        fontSize: 11,
-        lineHeight: 15,
-        color: "#243759",
-        marginTop: 3,
+        fontSize: T.body * u,
+        lineHeight: LINE_H,
+        color: COLORS.navy,
+        marginTop: S.xs,
       }}
     >
       {children}
@@ -64,10 +97,10 @@ function Label({ children }: { children: ReactNode }) {
     <Text
       style={{
         fontFamily: F.reg,
-        fontSize: 10,
-        color: "#243759",
-        marginTop: 10,
-        marginBottom: 4,
+        fontSize: T.label * u,
+        color: COLORS.navy,
+        marginTop: S.md,
+        marginBottom: S.xs,
       }}
     >
       {children}
@@ -94,16 +127,16 @@ function Input({
       keyboardType={numeric ? "numeric" : "default"}
       autoCapitalize="none"
       autoCorrect={false}
-      selectionColor="#E8708C"
+      selectionColor={COLORS.pink}
       style={{
-        height: 34,
-        borderRadius: 8,
-        backgroundColor: "#F8E9E5",
-        paddingHorizontal: 10,
+        height: FIELD_H,
+        borderRadius: S.sm,
+        backgroundColor: COLORS.cream,
+        paddingHorizontal: S.md,
         paddingVertical: 0,
         fontFamily: F.reg,
-        fontSize: 13,
-        color: "#243759",
+        fontSize: T.body * u,
+        color: COLORS.navy,
       }}
     />
   );
@@ -113,9 +146,9 @@ function Divider() {
   return (
     <View
       style={{
-        height: 1,
-        backgroundColor: COLORS.border,
-        marginVertical: 14 * u,
+        height: 2 * u,
+        backgroundColor: COLORS.cream,
+        marginVertical: S.lg,
       }}
     />
   );
@@ -127,9 +160,9 @@ function Notice({ msg }: { msg: Msg }) {
     <Text
       style={{
         fontFamily: F.reg,
-        fontSize: 11,
-        color: msg.ok ? "#5B8F6A" : "#E8708C",
-        marginTop: 8,
+        fontSize: T.body * u,
+        color: msg.ok ? "#5B8F6A" : COLORS.pink,
+        marginTop: S.sm,
       }}
     >
       {msg.text}
@@ -147,7 +180,7 @@ function Action({
   variant?: "solid" | "soft" | "navy";
 }) {
   return (
-    <View style={{ flexDirection: "row", marginTop: 12 * u }}>
+    <View style={{ flexDirection: "row", marginTop: S.md }}>
       <PillButton title={title} variant={variant} onPress={onPress} />
     </View>
   );
@@ -155,38 +188,55 @@ function Action({
 
 function Title({ children }: { children: ReactNode }) {
   return (
-    <View style={{ marginBottom: 8 * u }}>
-      <Heading size={32}>{children}</Heading>
+    <View style={{ marginBottom: S.sm }}>
+      <Heading size={T.title}>{children}</Heading>
     </View>
   );
 }
 
-function CurrencyText({
-  label,
-  selected,
-  size = 13,
-}: {
-  label: string;
-  selected?: boolean;
-  size?: number;
-}) {
-  const m = label.match(/^(.*?)\s*\((.+)\)\s*$/);
-  const font = selected ? F.semi : F.reg;
-  const textColor = selected ? PINK : "#243759";
-  const symbolColor = selected ? PINK : "#3B6FD4";
-
-  if (!m) {
-    return (
-      <Text style={{ fontFamily: font, fontSize: size, color: textColor }}>
-        {label}
-      </Text>
-    );
-  }
-
+function AboutCard() {
   return (
-    <Text style={{ fontFamily: font, fontSize: size, color: textColor }}>
-      {m[1]} (<Text style={{ color: symbolColor }}>{m[2]}</Text>)
-    </Text>
+    <Card style={{ marginTop: S.md, padding: S.lg }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: S.md }}>
+        <View
+          style={{
+            width: 44 * u,
+            height: 44 * u,
+            borderRadius: 22 * u,
+            backgroundColor: COLORS.soft,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <TintedIcon
+            Icon={AboutIcon}
+            width={22 * u}
+            height={22 * u}
+            color={COLORS.navy}
+          />
+        </View>
+        <View>
+          <Text
+            style={{
+              fontFamily: F.semi,
+              fontSize: 14.5 * u,
+              color: COLORS.navy,
+            }}
+          >
+            About
+          </Text>
+          <Text
+            style={{
+              fontFamily: F.reg,
+              fontSize: T.label * u,
+              color: COLORS.navy,
+            }}
+          >
+            version 3.0.7
+          </Text>
+        </View>
+      </View>
+    </Card>
   );
 }
 
@@ -234,13 +284,13 @@ export function AccountPage() {
 
   return (
     <Page
-      headerHeight={130}
+      headerHeight={144}
       bubbles={bubbles}
       left={<IconBtn name="arrow-back" onPress={closeSettings} />}
     >
       <Title>Account Details</Title>
 
-      <Card style={{ padding: 12 * u }}>
+      <Card style={{ padding: S.lg }}>
         <Sub>Change Account Details</Sub>
         <Body>You can change your username and email below.</Body>
         <Label>Username</Label>
@@ -284,38 +334,7 @@ export function AccountPage() {
         <Action title="Delete Account" onPress={onDelete} />
       </Card>
 
-      <Card style={{ marginTop: 12 * u, padding: 12 * u }}>
-        <View
-          style={{ flexDirection: "row", alignItems: "center", gap: 12 * u }}
-        >
-          <View
-            style={{
-              width: 40 * u,
-              height: 40 * u,
-              borderRadius: 20 * u,
-              backgroundColor: COLORS.soft,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Ionicons
-              name="alert-circle-outline"
-              size={20 * u}
-              color={COLORS.navy}
-            />
-          </View>
-          <View>
-            <Text
-              style={{ fontFamily: F.semi, fontSize: 13, color: "#243759" }}
-            >
-              About
-            </Text>
-            <Text style={{ fontFamily: F.reg, fontSize: 10, color: "#243759" }}>
-              version 2.8.7
-            </Text>
-          </View>
-        </View>
-      </Card>
+      <AboutCard />
     </Page>
   );
 }
@@ -357,13 +376,13 @@ export function SecurityPage() {
 
   return (
     <Page
-      headerHeight={130}
+      headerHeight={144}
       bubbles={bubbles}
       left={<IconBtn name="arrow-back" onPress={closeSettings} />}
     >
       <Title>Security</Title>
 
-      <Card style={{ padding: 12 * u }}>
+      <Card style={{ padding: S.lg }}>
         <Sub>Change Password</Sub>
         <Body>
           Your new password should contain at least 8 characters, a capital
@@ -400,24 +419,16 @@ export function SecurityPage() {
         <Notice msg={outMsg} />
         <Action title="Sign Out" onPress={onSignOutOthers} />
       </Card>
+
+      {isAdmin ? <AboutCard /> : null}
     </Page>
   );
 }
 
 export function PreferencesPage() {
   const s = useSettings();
-  const [draft, setDraft] = useState(s.currency);
-  const [open, setOpen] = useState(false);
   const [threshold, setThreshold] = useState(String(s.threshold));
-  const [currencyMsg, setCurrencyMsg] = useState<Msg>(null);
   const [thresholdMsg, setThresholdMsg] = useState<Msg>(null);
-
-  const selected = CURRENCIES.find((c) => c.code === draft) ?? CURRENCIES[0];
-
-  const onSaveCurrency = () => {
-    saveCurrency(draft);
-    setCurrencyMsg({ text: "Currency saved.", ok: true });
-  };
 
   const onSaveThreshold = () => {
     const text = threshold.trim();
@@ -434,85 +445,16 @@ export function PreferencesPage() {
 
   return (
     <Page
-      headerHeight={130}
+      headerHeight={144}
       bubbles={bubbles}
       left={<IconBtn name="arrow-back" onPress={closeSettings} />}
     >
       <Title>Preferences</Title>
 
-      <Card style={{ padding: 12 * u }}>
-        <Sub>Currency</Sub>
-        <Body>Set the currency used when showing prices.</Body>
-
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => setOpen(!open)}
-          style={{
-            height: 40,
-            borderRadius: 10,
-            backgroundColor: FIELD_BG,
-            borderWidth: 1,
-            borderColor: open ? PINK : FIELD_BORDER,
-            paddingHorizontal: 12,
-            marginTop: 10,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <CurrencyText label={selected.label} />
-          <Ionicons
-            name={open ? "chevron-up" : "chevron-down"}
-            size={14}
-            color={PINK}
-          />
-        </TouchableOpacity>
-
-        {open ? (
-          <View
-            style={{
-              marginTop: 6,
-              borderRadius: 10,
-              backgroundColor: FIELD_BG,
-              borderWidth: 1,
-              borderColor: PINK,
-              padding: 4,
-            }}
-          >
-            {CURRENCIES.map((c) => {
-              const isSelected = c.code === draft;
-              return (
-                <TouchableOpacity
-                  key={c.code}
-                  activeOpacity={0.85}
-                  onPress={() => {
-                    setDraft(c.code);
-                    setOpen(false);
-                  }}
-                  style={{
-                    paddingVertical: 10,
-                    paddingHorizontal: 10,
-                    borderRadius: 8,
-                    borderWidth: 1,
-                    borderColor: isSelected ? PINK : "transparent",
-                    backgroundColor: isSelected ? PINK_SOFT : "transparent",
-                  }}
-                >
-                  <CurrencyText label={c.label} selected={isSelected} />
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ) : null}
-
-        <Notice msg={currencyMsg} />
-        <Action title="Save" onPress={onSaveCurrency} />
-
-        <Divider />
-
+      <Card style={{ padding: S.lg }}>
         <Sub>Inventory Threshold</Sub>
         <Body>Set when an item should be flagged as low on stock.</Body>
-        <View style={{ marginTop: 8 }}>
+        <View style={{ marginTop: S.md }}>
           <Input value={threshold} onChangeText={setThreshold} numeric />
         </View>
         <Notice msg={thresholdMsg} />

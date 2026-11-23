@@ -1,15 +1,13 @@
 import { itemCount, useCatalog } from "@/catalogStore";
-import CategoryIcon from "@/components/CategoryIcon";
+import { CategoryCard } from "@/components/CategoryIcon";
 import {
   COLORS,
   Card,
   F,
   FW,
   Heading,
-  IconBtn,
   LabelBtn,
   Page,
-  SearchBar,
   Thumb,
   u,
 } from "@/components/Ui";
@@ -19,7 +17,13 @@ import { changeQty, selectProduct, useOrderState } from "@/orderStore";
 import { openPayout } from "@/payoutStore";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const stepBtn = {
   height: 26 * u,
@@ -29,6 +33,55 @@ const stepBtn = {
   alignItems: "center" as const,
   justifyContent: "center" as const,
 };
+
+function OrderThumbStack({
+  thumbs,
+}: {
+  thumbs: { image?: string; color: string }[];
+}) {
+  const list = thumbs.slice(0, 3);
+  if (list.length === 0) return null;
+
+  const w = 136 * u;
+  const h = 64;
+  const stepX = 6 * u;
+  const stepY = 5 * u;
+
+  // Render back-to-front so the 1st ordered item sits on top in front
+  const reversed = [...list].map((item, idx) => ({ item, idx })).reverse();
+
+  return (
+    <View
+      style={{
+        width: w + (list.length - 1) * stepX,
+        height: h * u + (list.length - 1) * stepY,
+        position: "relative",
+      }}
+    >
+      {reversed.map(({ item, idx }) => (
+        <View
+          key={idx}
+          style={{
+            position: "absolute",
+            left: idx * stepX,
+            bottom: idx * stepY,
+            borderRadius: 12 * u,
+            overflow: "hidden",
+            borderWidth: list.length > 1 ? 1 : 0,
+            borderColor: "rgba(255,255,255,0.65)",
+          }}
+        >
+          <Thumb
+            width={w}
+            height={h}
+            color={item.color}
+            source={item.image ? { uri: item.image } : undefined}
+          />
+        </View>
+      ))}
+    </View>
+  );
+}
 
 export default function Orders() {
   const { products, categories } = useCatalog();
@@ -45,6 +98,16 @@ export default function Orders() {
       )
     : products;
 
+  const orderedProducts = products.filter((p) => (qty[p.id] ?? 0) > 0);
+  const totalItems = orderedProducts.reduce(
+    (sum, p) => sum + (qty[p.id] ?? 0),
+    0,
+  );
+  const totalPrice = orderedProducts.reduce(
+    (sum, p) => sum + p.price * (qty[p.id] ?? 0),
+    0,
+  );
+
   return (
     <Page
       headerHeight={145}
@@ -59,13 +122,48 @@ export default function Orders() {
           onPress={() => openPayout()}
         />
       }
-      right={<IconBtn name="funnel-outline" />}
+      right={null}
     >
-      <SearchBar
-        placeholder="search for a meal..."
-        value={query}
-        onChangeText={setQuery}
-      />
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          height: 42 * u,
+          backgroundColor: "#E8DBD9",
+          borderWidth: 1,
+          borderColor: "#E8708C",
+          borderRadius: 11 * u,
+          paddingHorizontal: 12 * u,
+        }}
+      >
+        <Ionicons name="search-outline" size={20 * u} color="#E8708C" />
+        <View
+          style={{
+            width: 1,
+            height: 22 * u,
+            backgroundColor: "#E8708C",
+            marginHorizontal: 10 * u,
+          }}
+        />
+        <TextInput
+          placeholder="search for a meal..."
+          placeholderTextColor="#243759"
+          value={query}
+          onChangeText={setQuery}
+          style={{
+            flex: 1,
+            fontFamily: F.reg,
+            fontSize: 12.5 * u,
+            color: "#243759",
+            paddingVertical: 0,
+          }}
+        />
+        {query.length > 0 && (
+          <TouchableOpacity onPress={() => setQuery("")} hitSlop={8}>
+            <Ionicons name="close-circle" size={16 * u} color="#E8708C" />
+          </TouchableOpacity>
+        )}
+      </View>
 
       <TouchableOpacity
         activeOpacity={0.85}
@@ -90,6 +188,77 @@ export default function Orders() {
         </Text>
       </TouchableOpacity>
 
+      {/* Active Order Preview Stack (1, 2, or up to 3 pictures) */}
+      {orderedProducts.length > 0 ? (
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => openPayout()}
+          style={{ marginTop: 14 * u }}
+        >
+          <Card
+            style={{
+              padding: 12 * u,
+              borderRadius: 18 * u,
+              borderWidth: 1,
+              borderColor: "#E8708C",
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 8 * u,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: F.bold,
+                  fontSize: 13.5 * u,
+                  color: COLORS.navy,
+                }}
+              >
+                Current Order ({totalItems}{" "}
+                {totalItems === 1 ? "item" : "items"})
+              </Text>
+              <Text
+                style={{
+                  fontFamily: F.semi,
+                  fontSize: 11 * u,
+                  color: COLORS.pink,
+                }}
+              >
+                Tap to Payout
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "flex-end",
+              }}
+            >
+              <OrderThumbStack
+                thumbs={orderedProducts.slice(0, 3).map((p) => ({
+                  image: p.image,
+                  color: p.color,
+                }))}
+              />
+              <Text
+                style={{
+                  fontFamily: F.bold,
+                  fontSize: 22 * u,
+                  color: COLORS.navy,
+                }}
+              >
+                {peso(totalPrice)}
+              </Text>
+            </View>
+          </Card>
+        </TouchableOpacity>
+      ) : null}
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -97,38 +266,12 @@ export default function Orders() {
         contentContainerStyle={{ paddingHorizontal: 22 * u, gap: 12 * u }}
       >
         {categories.map((c) => (
-          <TouchableOpacity
+          <CategoryCard
             key={c.id}
-            activeOpacity={0.85}
+            category={c}
+            count={itemCount(products, c)}
             onPress={() => setQuery(c.id === "all" ? "" : c.name)}
-          >
-            <View
-              style={{
-                width: 150 * u,
-                height: 122 * u,
-                borderRadius: 18 * u,
-                backgroundColor: c.color,
-                borderWidth: 1,
-                borderColor: COLORS.pink,
-                padding: 14 * u,
-                justifyContent: "space-between",
-              }}
-            >
-              <CategoryIcon name={c.icon} size={32 * u} color={COLORS.navy} />
-              <View>
-                <Heading size={26}>{c.name}</Heading>
-                <Text
-                  style={{
-                    fontFamily: F.reg,
-                    fontSize: 10.5 * u,
-                    color: COLORS.navy,
-                  }}
-                >
-                  {itemCount(products, c)} items
-                </Text>
-              </View>
-            </View>
-          </TouchableOpacity>
+          />
         ))}
       </ScrollView>
 
@@ -152,6 +295,7 @@ export default function Orders() {
           flexWrap: "wrap",
           gap: 12 * u,
           marginTop: 16 * u,
+          paddingBottom: 24 * u,
         }}
       >
         {shown.map((p) => {
@@ -166,7 +310,12 @@ export default function Orders() {
                 activeOpacity={0.85}
                 onPress={() => selectProduct(p.id)}
               >
-                <Thumb width="100%" height={86} color={p.color} />
+                <Thumb
+                  width="100%"
+                  height={86}
+                  color={p.color}
+                  source={p.image ? { uri: p.image } : undefined}
+                />
                 <View style={{ paddingHorizontal: 4 * u, paddingTop: 8 * u }}>
                   <Heading size={18}>{p.name}</Heading>
                   <Text

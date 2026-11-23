@@ -1,3 +1,4 @@
+import AddImageIcon from "@/assets/icons/add-image.svg";
 import {
   deleteCategory,
   deleteProduct,
@@ -19,12 +20,15 @@ import {
   Page,
   PillButton,
   Thumb,
+  TintedIcon,
   u,
 } from "@/components/Ui";
 import { peso } from "@/data/products";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -36,6 +40,12 @@ import {
 const bubbles = [
   { size: 130, top: -65, left: 100 },
   { size: 55, top: 30, left: 215 },
+];
+
+const editItemBubbles = [
+  { size: 145, top: -45, left: 72 },
+  { size: 95, top: 45, left: 182 },
+  { size: 28, top: 8, left: 224 },
 ];
 
 const ICONS = [
@@ -51,15 +61,17 @@ const ICONS = [
   "crescent",
 ];
 
-function Input({
-  placeholder,
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+
+function PlaceholderInput({
   value,
+  placeholder,
   onChangeText,
   multiline,
   numeric,
 }: {
-  placeholder: string;
   value: string;
+  placeholder: string;
   onChangeText: (t: string) => void;
   multiline?: boolean;
   numeric?: boolean;
@@ -67,20 +79,22 @@ function Input({
   return (
     <TextInput
       value={value}
-      onChangeText={onChangeText}
       placeholder={placeholder}
-      placeholderTextColor={COLORS.navy}
+      placeholderTextColor="#5C6475"
+      onChangeText={onChangeText}
       multiline={multiline}
       keyboardType={numeric ? "numeric" : "default"}
+      selectionColor="#E8708C"
       style={{
         backgroundColor: COLORS.card,
-        borderRadius: 8 * u,
-        height: (multiline ? 76 : 30) * u,
-        paddingHorizontal: 10 * u,
-        paddingTop: multiline ? 8 * u : 0,
+        borderRadius: (multiline ? 14 : 10) * u,
+        height: (multiline ? 96 : 38) * u,
+        paddingHorizontal: 14 * u,
+        paddingTop: multiline ? 12 * u : 0,
+        paddingBottom: 0,
         textAlignVertical: multiline ? "top" : "center",
         fontFamily: F.reg,
-        fontSize: 10.5 * u,
+        fontSize: 12 * u,
         color: COLORS.navy,
       }}
     />
@@ -116,7 +130,12 @@ export function EditProducts() {
                 gap: 10 * u,
               }}
             >
-              <Thumb width={120 * u} height={70} color={p.color} />
+              <Thumb
+                width={120 * u}
+                height={70}
+                color={p.color}
+                source={p.image ? { uri: p.image } : undefined}
+              />
               <View style={{ flex: 1, alignItems: "flex-end" }}>
                 <Text
                   style={{
@@ -191,6 +210,7 @@ export function EditCategories() {
 
       <View style={{ gap: 12 * u, marginTop: 16 * u }}>
         {categories.map((c) => {
+          const count = itemCount(products, c);
           const row = (
             <Card style={{ padding: 12 * u }}>
               <View
@@ -233,7 +253,7 @@ export function EditCategories() {
                       color: COLORS.navy,
                     }}
                   >
-                    {itemCount(products, c)} items
+                    {`${count} ${count === 1 ? "item" : "items"}`}
                   </Text>
                 </View>
               </View>
@@ -260,8 +280,7 @@ export function EditCategories() {
 export function EditItem() {
   const { products, categories, editingId } = useCatalog();
   const existing = products.find((p) => p.id === editingId);
-  const custom = categories.filter((c) => c.id !== "all");
-  const choices = custom.length > 0 ? custom : categories;
+  const choices = categories;
 
   const [name, setName] = useState(existing?.name ?? "");
   const [description, setDescription] = useState(existing?.description ?? "");
@@ -270,6 +289,8 @@ export function EditItem() {
   );
   const [price, setPrice] = useState(existing ? String(existing.price) : "");
   const [stock, setStock] = useState(existing ? String(existing.stock) : "");
+  const [image, setImage] = useState<string | undefined>(existing?.image);
+  const [imageMessage, setImageMessage] = useState("");
 
   const priceNum = parseFloat(price);
   const stockNum = parseInt(stock || "0", 10);
@@ -278,6 +299,23 @@ export function EditItem() {
     !isNaN(priceNum) &&
     priceNum >= 0 &&
     !isNaN(stockNum);
+
+  const pickImage = async () => {
+    setImageMessage("");
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.7,
+    });
+    if (result.canceled) return;
+    const asset = result.assets[0];
+    if (asset.fileSize && asset.fileSize > MAX_IMAGE_BYTES) {
+      setImageMessage("That image is over 2MB. Pick a smaller one.");
+      return;
+    }
+    setImage(asset.uri);
+  };
 
   const onSave = () => {
     if (!valid) return;
@@ -288,108 +326,208 @@ export function EditItem() {
       category,
       price: priceNum,
       stock: stockNum,
+      image,
     });
     goBack();
   };
 
   return (
     <Page
-      headerHeight={100}
-      bubbles={bubbles}
+      headerHeight={144}
+      bubbles={editItemBubbles}
       left={<IconBtn name="arrow-back" onPress={goBack} />}
+      right={null}
     >
-      <Card
-        style={{
-          alignItems: "center",
-          justifyContent: "center",
-          height: 130 * u,
-        }}
-      >
-        <Ionicons name="image-outline" size={30 * u} color={COLORS.navy} />
-        <Text
+      {/* Upload Box */}
+      <TouchableOpacity activeOpacity={0.85} onPress={pickImage}>
+        <Card
           style={{
-            fontFamily: F.bold,
-            fontSize: 11 * u,
-            color: COLORS.navy,
-            marginTop: 6 * u,
+            height: 190 * u,
+            borderRadius: 20 * u,
+            backgroundColor: COLORS.card,
+            padding: 0,
+            overflow: "hidden",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          Upload Files
-        </Text>
-        <Text
-          style={{ fontFamily: F.reg, fontSize: 8 * u, color: COLORS.navy }}
-        >
-          (maximum file upload size of 2MB)
-        </Text>
-      </Card>
+          {image ? (
+            <Image
+              source={{ uri: image }}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="cover"
+            />
+          ) : (
+            <>
+              <TintedIcon
+                Icon={AddImageIcon}
+                width={34 * u}
+                height={34 * u}
+                color={COLORS.navy}
+              />
+              <Text
+                style={{
+                  fontFamily: F.bold,
+                  fontSize: 12.5 * u,
+                  color: COLORS.navy,
+                  marginTop: 10 * u,
+                }}
+              >
+                Upload Files
+              </Text>
+              <Text
+                style={{
+                  fontFamily: F.reg,
+                  fontSize: 9.5 * u,
+                  color: "#5C6475",
+                  marginTop: 2 * u,
+                }}
+              >
+                (maximum file upload size of 2MB)
+              </Text>
+            </>
+          )}
+        </Card>
+      </TouchableOpacity>
 
-      <View style={{ marginTop: 14 * u, marginBottom: 10 * u }}>
-        <Heading size={30}>Product Details</Heading>
+      {image ? (
+        <View style={{ flexDirection: "row", gap: 16 * u, marginTop: 8 * u }}>
+          <TouchableOpacity activeOpacity={0.85} onPress={pickImage}>
+            <Text
+              style={{
+                fontFamily: F.semi,
+                fontSize: 11 * u,
+                color: COLORS.pink,
+              }}
+            >
+              Change image
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setImage(undefined)}
+          >
+            <Text
+              style={{
+                fontFamily: F.semi,
+                fontSize: 11 * u,
+                color: COLORS.navy,
+              }}
+            >
+              Remove image
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      {imageMessage ? (
+        <Text
+          style={{
+            fontFamily: F.reg,
+            fontSize: 11 * u,
+            color: COLORS.pink,
+            marginTop: 8 * u,
+          }}
+        >
+          {imageMessage}
+        </Text>
+      ) : null}
+
+      {/* Product Details Section */}
+      <View style={{ marginTop: 22 * u, marginBottom: 10 * u }}>
+        <Heading size={32}>Product Details</Heading>
       </View>
 
-      <View style={{ gap: 8 * u }}>
-        <Input placeholder="Product Name" value={name} onChangeText={setName} />
-        <Input
-          placeholder="Product Description (optional)"
+      <View style={{ gap: 10 * u }}>
+        <PlaceholderInput
+          value={name}
+          placeholder="Product Name"
+          onChangeText={setName}
+        />
+
+        <PlaceholderInput
           value={description}
+          placeholder="Product Description (optional)"
           onChangeText={setDescription}
           multiline
         />
       </View>
 
-      <Text
-        style={{
-          fontFamily: F.bold,
-          fontSize: 11 * u,
-          color: COLORS.navy,
-          marginTop: 14 * u,
-          marginBottom: 8 * u,
-        }}
-      >
-        Category
-      </Text>
+      {/* Grey Category Cards (scoped only to EditItem) */}
+      <View style={{ marginTop: 18 * u }}>
+        <Text
+          style={{
+            fontFamily: F.bold,
+            fontSize: 13 * u,
+            color: COLORS.navy,
+            marginBottom: 8 * u,
+          }}
+        >
+          Category
+        </Text>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ marginHorizontal: -22 * u }}
-        contentContainerStyle={{ paddingHorizontal: 22 * u, gap: 10 * u }}
-      >
-        {choices.map((c) => {
-          const active = c.name === category;
-          return (
-            <TouchableOpacity
-              key={c.id}
-              activeOpacity={0.85}
-              onPress={() => setCategory(c.name)}
-              style={{
-                width: 110 * u,
-                height: 84 * u,
-                borderRadius: 14 * u,
-                backgroundColor: c.color,
-                borderWidth: active ? 1.5 : 1,
-                borderColor: active ? COLORS.pink : COLORS.border,
-                padding: 10 * u,
-                justifyContent: "space-between",
-              }}
-            >
-              <CategoryIcon name={c.icon} size={22 * u} color={COLORS.navy} />
-              <Heading size={18}>{c.name}</Heading>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ marginHorizontal: -22 * u }}
+          contentContainerStyle={{ paddingHorizontal: 22 * u, gap: 10 * u }}
+        >
+          {choices.map((c) => {
+            const selected = c.name === category;
+            return (
+              <TouchableOpacity
+                key={c.id}
+                activeOpacity={0.85}
+                onPress={() => setCategory(c.name)}
+              >
+                <View
+                  style={{
+                    width: 130 * u,
+                    height: 88 * u,
+                    borderRadius: 16 * u,
+                    backgroundColor: COLORS.card,
+                    borderWidth: selected ? 1.2 : 0,
+                    borderColor: selected ? "#E8708C" : "transparent",
+                    paddingHorizontal: 12 * u,
+                    paddingVertical: 10 * u,
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <CategoryIcon
+                    name={c.icon}
+                    size={22 * u}
+                    color={COLORS.navy}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      fontFamily: F.title,
+                      fontSize: 19 * u,
+                      lineHeight: 23 * u,
+                      color: COLORS.navy,
+                    }}
+                  >
+                    {c.name}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
 
-      <View style={{ gap: 8 * u, marginTop: 12 * u }}>
-        <Input
-          placeholder="Product Price"
+      {/* Price & Stock Inputs */}
+      <View style={{ gap: 10 * u, marginTop: 16 * u }}>
+        <PlaceholderInput
           value={price}
+          placeholder="Product Price"
           onChangeText={setPrice}
           numeric
         />
-        <Input
-          placeholder="Product Stock"
+
+        <PlaceholderInput
           value={stock}
+          placeholder="Product Stock"
           onChangeText={setStock}
           numeric
         />
@@ -398,7 +536,8 @@ export function EditItem() {
       <View
         style={{
           flexDirection: "row",
-          marginTop: 16 * u,
+          marginTop: 20 * u,
+          paddingBottom: 24 * u,
           opacity: valid ? 1 : 0.5,
         }}
       >

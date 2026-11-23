@@ -95,7 +95,7 @@ export default function Index() {
             marginBottom: 14 * u,
           }}
         >
-          Welcome back, Dave!
+          Welcome back, User!
         </Text>
         <View style={{ flexDirection: "row" }}>
           <View style={{ width: 120 * u }}>

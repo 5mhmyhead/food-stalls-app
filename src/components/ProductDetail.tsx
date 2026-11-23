@@ -45,7 +45,12 @@ export default function ProductDetail() {
       left={<IconBtn name="arrow-back" onPress={closeProduct} />}
       right={<IconBtn name="menu" />}
     >
-      <Thumb width="100%" height={150} color={product.color} />
+      <Thumb
+        width="100%"
+        height={150}
+        color={product.color}
+        source={product.image ? { uri: product.image } : undefined}
+      />
 
       <Card style={{ marginTop: 14 * u, padding: 16 * u }}>
         <Heading size={30}>{product.name}</Heading>
