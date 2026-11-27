@@ -37,13 +37,24 @@ import {
   Text,
   View,
 } from "react-native";
+import Recover from "./recover";
+import Reset from "./reset";
+import Verify from "./verify";
 
 const { width: SW, height: SH } = Dimensions.get("window");
 const FW = Platform.OS === "web" ? Math.min(SW, SH * (390 / 844)) : SW;
 const u = FW / 390;
 const native = Platform.OS !== "web";
 
-type Go = (page: string, message?: string) => void;
+type Go = (page: string, message?: string, params?: { email?: string }) => void;
+
+const STEP_ORDER: Record<string, number> = {
+  signin: 0,
+  signup: 1,
+  recover: 1,
+  verify: 2,
+  reset: 3,
+};
 
 function Toast() {
   const { notice } = useManageState();
@@ -342,119 +353,23 @@ function SignUpForm({ go }: { go: Go }) {
   );
 }
 
-function RecoverForm({ go }: { go: Go }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  const onRecover = async () => {
-    if (submitting) return;
-    setErrorMsg("");
-    setSubmitting(true);
-    const err = await session.recoverAccount({
-      email,
-      password,
-      confirm,
-    });
-    setSubmitting(false);
-    if (err) {
-      setErrorMsg(err);
-      return;
-    }
-    go("signin", "Recovery Email\nSent!");
-  };
-
-  return (
-    <AuthScreen
-      contentTop={226}
-      top={
-        <TopDecor
-          height={197}
-          bubbles={[
-            bubble(140, { top: -66, left: 0 }, "right"),
-            bubble(25, { top: 121, left: 62 }, "down"),
-          ]}
-        />
-      }
-      bottom={
-        <BottomDecor
-          height={101}
-          bubbles={[
-            bubble(195, { bottom: -129, left: 203 }, "downright"),
-            bubble(27, { bottom: 62, left: 51 }, "down"),
-          ]}
-        />
-      }
-    >
-      <CatLogo />
-      <Text style={authStyles.title}>{"Recover\nAccount"}</Text>
-      <Field
-        label="Enter your email address"
-        icon="mail-outline"
-        value={email}
-        onChangeText={(text) => {
-          setEmail(text);
-          if (errorMsg) setErrorMsg("");
-        }}
-      />
-      <Field
-        label="Enter your new password"
-        icon="lock-closed-outline"
-        value={password}
-        onChangeText={(text) => {
-          setPassword(text);
-          if (errorMsg) setErrorMsg("");
-        }}
-        secure
-      />
-      <Field
-        label="Confirm your new password"
-        icon="lock-closed-outline"
-        value={confirm}
-        onChangeText={(text) => {
-          setConfirm(text);
-          if (errorMsg) setErrorMsg("");
-        }}
-        secure
-      />
-      {errorMsg ? (
-        <Text
-          style={{
-            fontFamily: "Poppins_400Regular",
-            fontSize: 10 * u,
-            color: "#E8708C",
-            marginTop: -6 * u,
-            marginBottom: 4 * u,
-            marginLeft: 4 * u,
-          }}
-        >
-          {errorMsg}
-        </Text>
-      ) : null}
-      <PrimaryButton
-        title={submitting ? "Sending..." : "Reset Password"}
-        onPress={onRecover}
-      />
-      <FooterLink
-        prefix="Remember your credentials?"
-        link="Log in"
-        onPress={() => go("signin")}
-      />
-    </AuthScreen>
-  );
-}
-
 function AuthFlow() {
   const [page, setPage] = useState("signin");
   const [prevPage, setPrevPage] = useState<string | null>(null);
+  const [recoverEmail, setRecoverEmail] = useState("");
   const [direction, setDirection] = useState<1 | -1>(1);
   const progress = useRef(new Animated.Value(1)).current;
 
-  const go: Go = (next, message) => {
+  const go: Go = (next, message, params) => {
     if (next === page) return;
-    const isForward = next !== "signin";
+    if (params?.email !== undefined) {
+      setRecoverEmail(params.email);
+    }
+
+    const currentRank = STEP_ORDER[page] ?? 0;
+    const nextRank = STEP_ORDER[next] ?? 0;
+    const isForward = nextRank > currentRank;
+
     setDirection(isForward ? 1 : -1);
     setPrevPage(page);
     setPage(next);
@@ -475,7 +390,9 @@ function AuthFlow() {
 
   const renderForm = (key: string) => {
     if (key === "signup") return <SignUpForm go={go} />;
-    if (key === "recover") return <RecoverForm go={go} />;
+    if (key === "recover") return <Recover go={go} />;
+    if (key === "verify") return <Verify go={go} email={recoverEmail} />;
+    if (key === "reset") return <Reset go={go} email={recoverEmail} />;
     return <SignInForm go={go} />;
   };
 
