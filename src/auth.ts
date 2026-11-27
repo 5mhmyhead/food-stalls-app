@@ -27,6 +27,30 @@ const setState = (next: Partial<AuthState>) => {
   emit();
 };
 
+const USERNAME_CACHE_KEY = "auth_username_email_map";
+
+function getCachedEmail(username: string): string | null {
+  try {
+    if (typeof localStorage === "undefined") return null;
+    const raw = localStorage.getItem(USERNAME_CACHE_KEY);
+    if (!raw) return null;
+    const map = JSON.parse(raw) as Record<string, string>;
+    return map[username.trim().toLowerCase()] || null;
+  } catch {
+    return null;
+  }
+}
+
+function cacheUsernameEmail(username: string, email: string) {
+  try {
+    if (typeof localStorage === "undefined" || !username || !email) return;
+    const raw = localStorage.getItem(USERNAME_CACHE_KEY);
+    const map = raw ? (JSON.parse(raw) as Record<string, string>) : {};
+    map[username.trim().toLowerCase()] = email.trim().toLowerCase();
+    localStorage.setItem(USERNAME_CACHE_KEY, JSON.stringify(map));
+  } catch {}
+}
+
 async function hydrateProfile(
   userId: string,
   fallbackEmail?: string | null,
@@ -53,6 +77,10 @@ async function hydrateProfile(
 
   const resolvedEmail = data?.email || fallbackEmail || "";
   const resolvedRole = data?.account_type || "WORKER";
+
+  if (resolvedName && resolvedEmail) {
+    cacheUsernameEmail(resolvedName, resolvedEmail);
+  }
 
   if (!data) {
     await supabase.from("profiles").upsert({
@@ -138,14 +166,16 @@ export const session = {
         .ilike("username", cleanId)
         .maybeSingle();
 
-      if (lookupError) {
+      const resolvedEmail = profileRow?.email || getCachedEmail(cleanId);
+
+      if (lookupError && !resolvedEmail) {
         return lookupError.message;
       }
-      if (!profileRow?.email) {
-        return "Account not found. Check your username or sign up.";
+      if (!resolvedEmail) {
+        return "Account not found. Check your username or sign up with email.";
       }
-      loginEmail = profileRow.email;
-      knownUsername = profileRow.username || cleanId;
+      loginEmail = resolvedEmail;
+      knownUsername = profileRow?.username || cleanId;
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -220,6 +250,8 @@ export const session = {
     if (error) {
       return error.message;
     }
+
+    cacheUsernameEmail(cleanUser, cleanEmail);
 
     if (data.user && data.session) {
       await supabase.from("profiles").upsert({
