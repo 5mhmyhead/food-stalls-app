@@ -2,8 +2,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
 import { Platform } from "react-native";
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+export const supabaseUrl = (process.env.EXPO_PUBLIC_SUPABASE_URL || "")
+  .replace(/^["']|["']$/g, "")
+  .trim();
+
+export const supabaseAnonKey = (process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || "")
+  .replace(/^["']|["']$/g, "")
+  .trim();
 
 const isServer = Platform.OS === "web" && typeof window === "undefined";
 

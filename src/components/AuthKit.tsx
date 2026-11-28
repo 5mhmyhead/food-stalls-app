@@ -1,10 +1,12 @@
+import EyeCloseIcon from "@/assets/icons/eye-close.svg";
+import EyeOpenIcon from "@/assets/icons/eye-open.svg";
 import Kitty from "@/assets/icons/kitty.svg";
 import LockIcon from "@/assets/icons/lock.svg";
 import MailIcon from "@/assets/icons/mail.svg";
 import UserIcon from "@/assets/icons/user.svg";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { LinearGradient } from "expo-linear-gradient";
-import type { ComponentType, ReactNode } from "react";
+import { useState, type ComponentType, type ReactNode } from "react";
 import {
   Dimensions,
   KeyboardAvoidingView,
@@ -23,6 +25,8 @@ export const u = FW / 390;
 
 const SafeMaskedView = MaskedView as unknown as ComponentType<any>;
 export type SvgIcon = ComponentType<{ width: number; height: number }>;
+
+export { EyeCloseIcon, EyeOpenIcon };
 
 const FIELD_ICONS: Record<string, SvgIcon> = {
   "person-circle-outline": UserIcon,
@@ -216,6 +220,8 @@ export function Field({
   onChangeText: (text: string) => void;
   secure?: boolean;
 }) {
+  const [visible, setVisible] = useState(false);
+
   const IconComp =
     typeof icon === "string" ? (FIELD_ICONS[icon] ?? UserIcon) : icon;
 
@@ -261,7 +267,7 @@ export function Field({
         <TextInput
           value={value}
           onChangeText={onChangeText}
-          secureTextEntry={secure}
+          secureTextEntry={secure && !visible}
           autoCapitalize="none"
           autoCorrect={false}
           selectionColor="#E8708C"
@@ -274,6 +280,20 @@ export function Field({
             ...(Platform.OS === "web" ? ({ outlineStyle: "none" } as any) : {}),
           }}
         />
+        {secure && (
+          <TouchableOpacity
+            onPress={() => setVisible((v) => !v)}
+            hitSlop={8}
+            style={{ marginLeft: 8 * u }}
+          >
+            <TintedIcon
+              Icon={visible ? EyeOpenIcon : EyeCloseIcon}
+              width={16.5 * u}
+              height={14.85 * u}
+              color="#E76D8A"
+            />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

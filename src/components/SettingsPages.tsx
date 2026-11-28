@@ -347,7 +347,6 @@ export function SecurityPage() {
   const [newCode, setNewCode] = useState("");
   const [pwMsg, setPwMsg] = useState<Msg>(null);
   const [codeMsg, setCodeMsg] = useState<Msg>(null);
-  const [outMsg, setOutMsg] = useState<Msg>(null);
 
   const onChangePassword = () => {
     const error = changePassword(current, next);
@@ -368,10 +367,6 @@ export function SecurityPage() {
     }
     setNewCode("");
     setCodeMsg({ text: "Access code updated.", ok: true });
-  };
-
-  const onSignOutOthers = () => {
-    setOutMsg({ text: "Signed out of all other devices.", ok: true });
   };
 
   return (
@@ -409,15 +404,6 @@ export function SecurityPage() {
             <Action title="Verify Access Code" onPress={onSaveCode} />
           </>
         ) : null}
-
-        <Divider />
-
-        <Sub>Sign Out of All Devices</Sub>
-        <Body>
-          This will sign you out of all sessions and devices, except this one.
-        </Body>
-        <Notice msg={outMsg} />
-        <Action title="Sign Out" onPress={onSignOutOthers} />
       </Card>
 
       {isAdmin ? <AboutCard /> : null}

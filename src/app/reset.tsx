@@ -1,3 +1,5 @@
+import EyeCloseIcon from "@/assets/icons/eye-close.svg";
+import EyeOpenIcon from "@/assets/icons/eye-open.svg";
 import Kitty from "@/assets/icons/kitty.svg";
 import LockIcon from "@/assets/icons/lock.svg";
 
@@ -10,23 +12,24 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { useMemo, useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
-    useWindowDimensions,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
 } from "react-native";
 
 const COLORS = {
-  background: "#FBE6E2",
-  pink: "#E9698A",
+  background: "#FDEDEA",
+  pink: "#E8708C",
+  eyePink: "#E76D8A",
   navy: "#243759",
-  border: "#F3A3AF",
-  inputBg: "#E6DDDB",
+  border: "#E8708C",
+  inputBg: "#E8DBD9",
   white: "#FFFFFF",
 };
 
@@ -73,9 +76,9 @@ export default function reset({
   const onSavePassword = async () => {
     if (submitting) return;
     if (!password || !confirm) {
-      return setErrorMsg("please fill out both password fields.");
+      return setErrorMsg("Please fill out both password fields.");
     }
-    if (password !== confirm) return setErrorMsg("passwords do not match.");
+    if (password !== confirm) return setErrorMsg("Passwords do not match.");
 
     setErrorMsg("");
     setSubmitting(true);
@@ -83,10 +86,10 @@ export default function reset({
     setSubmitting(false);
 
     if (err) return setErrorMsg(err);
-    navigate("signin", "/", "password\nreset!");
+    navigate("signin", "/", "Password\nReset!");
   };
 
-  const bubble = (size: number, left: number, top: number, opacity = 0.42) => (
+  const bubble = (size: number, left: number, top: number, opacity = 0.34) => (
     <LinearGradient
       colors={[`rgba(255,255,255,${opacity})`, "rgba(255,255,255,0)"]}
       start={{ x: 0.15, y: 0.15 }}
@@ -120,8 +123,8 @@ export default function reset({
       <View style={styles.inputBox}>
         <TintedIcon
           Icon={LockIcon}
-          width={20 * u}
-          height={20 * u}
+          width={19 * u}
+          height={19 * u}
           color={COLORS.pink}
         />
         <View style={styles.divider} />
@@ -139,11 +142,16 @@ export default function reset({
           selectionColor={COLORS.pink}
           style={styles.input}
         />
-        <TouchableOpacity onPress={onToggle} hitSlop={8}>
-          <Ionicons
-            name={visible ? "eye-outline" : "eye-off-outline"}
-            size={18 * u}
-            color={COLORS.navy}
+        <TouchableOpacity
+          onPress={onToggle}
+          hitSlop={8}
+          style={{ marginLeft: 8 * u }}
+        >
+          <TintedIcon
+            Icon={visible ? EyeOpenIcon : EyeCloseIcon}
+            width={16.5 * u}
+            height={14.85 * u}
+            color={COLORS.eyePink}
           />
         </TouchableOpacity>
       </View>
@@ -170,9 +178,9 @@ export default function reset({
         >
           {/* header */}
           <View style={styles.header}>
-            {bubble(150 * u, SW * 0.38, 18 * u, 0.45)}
-            {bubble(96 * u, SW * 0.56, 94 * u, 0.44)}
-            {bubble(32 * u, SW * 0.62, 42 * u, 0.42)}
+            {bubble(150 * u, SW * 0.38, 18 * u, 0.36)}
+            {bubble(96 * u, SW * 0.56, 94 * u, 0.34)}
+            {bubble(32 * u, SW * 0.62, 42 * u, 0.34)}
 
             <TouchableOpacity
               style={[styles.backBtn, { left: backLeft }]}
@@ -195,20 +203,20 @@ export default function reset({
             <View style={styles.logo}>
               <TintedIcon
                 Icon={Kitty}
-                width={66 * u}
-                height={62 * u}
+                width={70 * u}
+                height={60 * u}
                 color={COLORS.navy}
               />
             </View>
 
-            <Text style={styles.title}>{"reset\npassword"}</Text>
+            <Text style={styles.title}>{"Reset\nPassword"}</Text>
             <Text style={styles.subtitle}>
-              enter a new password to reset the password
+              Enter a new password to reset the password
             </Text>
 
             <View style={styles.form}>
               {renderPasswordInput({
-                label: "password",
+                label: "Password",
                 value: password,
                 onChangeText: setPassword,
                 visible: showPassword,
@@ -216,7 +224,7 @@ export default function reset({
               })}
 
               {renderPasswordInput({
-                label: "confirm password",
+                label: "Confirm Password",
                 value: confirm,
                 onChangeText: setConfirm,
                 visible: showConfirm,
@@ -232,7 +240,7 @@ export default function reset({
                 activeOpacity={0.85}
               >
                 <Text style={styles.btnText}>
-                  {submitting ? "saving..." : "save password"}
+                  {submitting ? "Saving..." : "Save Password"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -240,8 +248,8 @@ export default function reset({
 
           {/* footer */}
           <View style={styles.bottom}>
-            {bubble(34 * u, SW * 0.47, 14 * u, 0.44)}
-            {bubble(110 * u, SW * 0.56, 12 * u, 0.42)}
+            {bubble(34 * u, SW * 0.47, 14 * u, 0.34)}
+            {bubble(110 * u, SW * 0.56, 12 * u, 0.34)}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -265,8 +273,8 @@ const createStyles = (u: number) =>
       width: "100%",
       height: 210 * u,
       backgroundColor: COLORS.pink,
-      borderBottomLeftRadius: 24 * u,
-      borderBottomRightRadius: 24 * u,
+      borderBottomLeftRadius: 34 * u,
+      borderBottomRightRadius: 34 * u,
       overflow: "hidden",
       position: "relative",
     },
@@ -289,8 +297,8 @@ const createStyles = (u: number) =>
       paddingBottom: 20 * u,
     },
     logo: {
-      width: 66 * u,
-      height: 62 * u,
+      width: 54 * u,
+      height: 44 * u,
       alignItems: "center",
       justifyContent: "center",
       marginBottom: 4 * u,
@@ -298,7 +306,8 @@ const createStyles = (u: number) =>
     title: {
       fontFamily: "PlayfairDisplay_900Black_Italic",
       fontSize: 40 * u,
-      lineHeight: 42 * u,
+      lineHeight: 44 * u,
+      letterSpacing: 0.6 * u,
       color: COLORS.navy,
       textAlign: "center",
       includeFontPadding: false,
@@ -319,13 +328,14 @@ const createStyles = (u: number) =>
     },
     field: {
       width: "100%",
-      marginBottom: 12 * u,
+      marginBottom: 11 * u,
     },
     label: {
       fontFamily: "Poppins_400Regular",
-      fontSize: 11 * u,
+      fontSize: 10.5 * u,
       color: COLORS.navy,
-      marginBottom: 5 * u,
+      marginBottom: 4 * u,
+      marginLeft: 2 * u,
     },
     inputBox: {
       width: "100%",
@@ -333,39 +343,39 @@ const createStyles = (u: number) =>
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: COLORS.inputBg,
-      borderWidth: 1.2 * u,
+      borderWidth: 1,
       borderColor: COLORS.border,
       borderRadius: 12 * u,
-      paddingHorizontal: 12 * u,
+      paddingHorizontal: 13 * u,
     },
     divider: {
-      width: 1 * u,
-      height: 24 * u,
+      width: 1,
+      height: 22 * u,
       backgroundColor: COLORS.border,
-      marginHorizontal: 10 * u,
+      marginHorizontal: 11 * u,
     },
     input: {
       flex: 1,
       minWidth: 0,
       height: "100%",
       fontFamily: "Poppins_400Regular",
-      fontSize: 12 * u,
+      fontSize: 13 * u,
       color: COLORS.navy,
       paddingVertical: 0,
       ...(Platform.OS === "web" ? ({ outlineStyle: "none" } as any) : {}),
     },
     btn: {
       width: "100%",
-      height: 46 * u,
+      height: 44 * u,
       borderRadius: 999,
       backgroundColor: COLORS.pink,
       alignItems: "center",
       justifyContent: "center",
-      marginTop: 12 * u,
+      marginTop: 10 * u,
     },
     btnText: {
       fontFamily: "Poppins_600SemiBold",
-      fontSize: 13 * u,
+      fontSize: 13.5 * u,
       color: COLORS.white,
     },
     bottom: {
@@ -373,15 +383,16 @@ const createStyles = (u: number) =>
       height: 96 * u,
       position: "relative",
       backgroundColor: COLORS.pink,
-      borderTopLeftRadius: 24 * u,
-      borderTopRightRadius: 24 * u,
+      borderTopLeftRadius: 34 * u,
+      borderTopRightRadius: 34 * u,
       overflow: "hidden",
     },
     error: {
       fontFamily: "Poppins_400Regular",
-      fontSize: 11 * u,
+      fontSize: 10.5 * u,
       color: COLORS.pink,
-      marginTop: 2 * u,
+      marginTop: -2 * u,
       marginBottom: 4 * u,
+      marginLeft: 2 * u,
     },
   });

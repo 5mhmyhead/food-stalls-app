@@ -1,10 +1,11 @@
-import { supabase } from "@/lib/supabase";
+import { supabase, supabaseAnonKey, supabaseUrl } from "@/lib/supabase";
 import { showNotice } from "@/manageStore";
 import {
   resetSettings,
   syncUserFromProfile,
   useSettings,
 } from "@/settingsStore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSyncExternalStore } from "react";
 
 type AuthState = {
@@ -19,6 +20,8 @@ let state: AuthState = {
   userId: null,
 };
 
+const USERNAME_CACHE_KEY = "kawaiicount:username_email_map:v1";
+
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
@@ -27,28 +30,121 @@ const setState = (next: Partial<AuthState>) => {
   emit();
 };
 
-const USERNAME_CACHE_KEY = "auth_username_email_map";
+function sanitizeInput(raw: string): string {
+  return raw.replace(/[\s\u200B-\u200D\uFEFF]/g, "").trim();
+}
 
-function getCachedEmail(username: string): string | null {
+async function readUsernameCache(): Promise<Record<string, string>> {
   try {
-    if (typeof localStorage === "undefined") return null;
-    const raw = localStorage.getItem(USERNAME_CACHE_KEY);
-    if (!raw) return null;
-    const map = JSON.parse(raw) as Record<string, string>;
-    return map[username.trim().toLowerCase()] || null;
+    const raw = await AsyncStorage.getItem(USERNAME_CACHE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
   } catch {
-    return null;
+    return {};
   }
 }
 
-function cacheUsernameEmail(username: string, email: string) {
+async function saveUsernameToCache(username: string, email: string) {
+  const cleanUser = sanitizeInput(username).toLowerCase();
+  const cleanEmail = sanitizeInput(email).toLowerCase();
+  if (!cleanUser || !cleanEmail || !cleanEmail.includes("@")) return;
+
   try {
-    if (typeof localStorage === "undefined" || !username || !email) return;
-    const raw = localStorage.getItem(USERNAME_CACHE_KEY);
-    const map = raw ? (JSON.parse(raw) as Record<string, string>) : {};
-    map[username.trim().toLowerCase()] = email.trim().toLowerCase();
-    localStorage.setItem(USERNAME_CACHE_KEY, JSON.stringify(map));
+    const map = await readUsernameCache();
+    map[cleanUser] = cleanEmail;
+    await AsyncStorage.setItem(USERNAME_CACHE_KEY, JSON.stringify(map));
   } catch {}
+}
+
+async function lookupEmailByUsername(
+  username: string,
+): Promise<{ email: string | null; username: string }> {
+  const cleanUser = sanitizeInput(username);
+  const normalizedKey = cleanUser.toLowerCase();
+  const urlClean = supabaseUrl.trim();
+  const keyClean = supabaseAnonKey.trim();
+
+  // 1. Check local device cache
+  const localMap = await readUsernameCache();
+  if (localMap[normalizedKey]) {
+    return {
+      email: localMap[normalizedKey],
+      username: cleanUser,
+    };
+  }
+
+  // 2. Direct Supabase client query (exact match)
+  try {
+    const { data: exactRow } = await supabase
+      .from("profiles")
+      .select("email, username")
+      .eq("username", cleanUser)
+      .limit(1)
+      .maybeSingle();
+
+    if (exactRow?.email) {
+      const resolvedEmail = sanitizeInput(exactRow.email).toLowerCase();
+      const resolvedUsername = exactRow.username?.trim() || cleanUser;
+      await saveUsernameToCache(resolvedUsername, resolvedEmail);
+      return {
+        email: resolvedEmail,
+        username: resolvedUsername,
+      };
+    }
+  } catch {}
+
+  // 3. Direct REST table lookup (case-insensitive)
+  if (urlClean && keyClean) {
+    try {
+      const endpoint = `${urlClean}/rest/v1/profiles?select=email,username&username=ilike.${encodeURIComponent(cleanUser)}&limit=1`;
+      const res = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          apikey: keyClean,
+          Authorization: `Bearer ${keyClean}`,
+          Accept: "application/json",
+        },
+      });
+
+      if (res.ok) {
+        const rows = (await res.json()) as Array<{
+          email?: string;
+          username?: string;
+        }>;
+        if (rows?.[0]?.email) {
+          const resolvedEmail = sanitizeInput(rows[0].email).toLowerCase();
+          const resolvedUsername = rows[0].username?.trim() || cleanUser;
+          await saveUsernameToCache(resolvedUsername, resolvedEmail);
+          return {
+            email: resolvedEmail,
+            username: resolvedUsername,
+          };
+        }
+      }
+    } catch {}
+  }
+
+  // 4. RPC lookup if present on backend
+  try {
+    const { data: rpcEmail } = await supabase.rpc("get_email_by_username", {
+      p_username: cleanUser,
+    });
+
+    if (typeof rpcEmail === "string" && rpcEmail.includes("@")) {
+      const resolvedEmail = sanitizeInput(rpcEmail).toLowerCase();
+      await saveUsernameToCache(cleanUser, resolvedEmail);
+      return {
+        email: resolvedEmail,
+        username: cleanUser,
+      };
+    }
+  } catch {}
+
+  return {
+    email: null,
+    username: cleanUser,
+  };
 }
 
 async function hydrateProfile(
@@ -75,12 +171,8 @@ async function hydrateProfile(
     metaName ||
     (fallbackEmail ? fallbackEmail.split("@")[0] : "User");
 
-  const resolvedEmail = data?.email || fallbackEmail || "";
+  const resolvedEmail = (data?.email || fallbackEmail || "").trim();
   const resolvedRole = data?.account_type || "WORKER";
-
-  if (resolvedName && resolvedEmail) {
-    cacheUsernameEmail(resolvedName, resolvedEmail);
-  }
 
   if (!data) {
     await supabase.from("profiles").upsert({
@@ -89,6 +181,10 @@ async function hydrateProfile(
       email: resolvedEmail,
       account_type: resolvedRole,
     });
+  }
+
+  if (resolvedName && resolvedEmail) {
+    await saveUsernameToCache(resolvedName, resolvedEmail);
   }
 
   syncUserFromProfile({
@@ -103,7 +199,12 @@ async function hydrateProfile(
 export async function initAuth() {
   const {
     data: { session: currentSession },
+    error,
   } = await supabase.auth.getSession();
+
+  if (error) {
+    await supabase.auth.signOut({ scope: "local" });
+  }
 
   if (currentSession?.user) {
     await hydrateProfile(
@@ -152,30 +253,26 @@ export const session = {
     identifier: string,
     password: string,
   ): Promise<string | null> {
-    const cleanId = identifier.trim();
+    const cleanId = sanitizeInput(identifier);
     if (!cleanId) return "Please enter your username or email.";
     if (!password) return "Please enter your password.";
 
     let loginEmail = cleanId;
     let knownUsername = "";
 
-    if (!cleanId.includes("@")) {
-      const { data: profileRow, error: lookupError } = await supabase
-        .from("profiles")
-        .select("email, username")
-        .ilike("username", cleanId)
-        .maybeSingle();
-
-      const resolvedEmail = profileRow?.email || getCachedEmail(cleanId);
-
-      if (lookupError && !resolvedEmail) {
-        return lookupError.message;
+    if (cleanId.includes("@")) {
+      const normalizedEmail = cleanId.toLowerCase();
+      if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
+        return "Please enter a valid email address.";
       }
-      if (!resolvedEmail) {
-        return "Account not found. Check your username or sign up with email.";
+      loginEmail = normalizedEmail;
+    } else {
+      const resolved = await lookupEmailByUsername(cleanId);
+      if (!resolved.email) {
+        return "Account not found. Check your username or sign in with your email.";
       }
-      loginEmail = resolvedEmail;
-      knownUsername = profileRow?.username || cleanId;
+      loginEmail = resolved.email;
+      knownUsername = resolved.username;
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -196,6 +293,10 @@ export const session = {
       knownUsername ||
       "User";
 
+    if (displayName && data.user.email) {
+      await saveUsernameToCache(displayName, data.user.email);
+    }
+
     setState({
       loggedIn: true,
       initialized: true,
@@ -213,8 +314,8 @@ export const session = {
     password: string;
     confirm: string;
   }): Promise<string | null> {
-    const cleanUser = params.username.trim();
-    const cleanEmail = params.email.trim().toLowerCase();
+    const cleanUser = sanitizeInput(params.username);
+    const cleanEmail = sanitizeInput(params.email).toLowerCase();
 
     if (!cleanUser) return "Please enter a username.";
     if (!cleanEmail || !/^\S+@\S+\.\S+$/.test(cleanEmail)) {
@@ -227,13 +328,8 @@ export const session = {
       return "Passwords do not match.";
     }
 
-    const { data: existingUsername } = await supabase
-      .from("profiles")
-      .select("id")
-      .ilike("username", cleanUser)
-      .maybeSingle();
-
-    if (existingUsername) {
+    const existing = await lookupEmailByUsername(cleanUser);
+    if (existing.email) {
       return "That username is already taken.";
     }
 
@@ -251,17 +347,19 @@ export const session = {
       return error.message;
     }
 
-    cacheUsernameEmail(cleanUser, cleanEmail);
+    await saveUsernameToCache(cleanUser, cleanEmail);
 
-    if (data.user && data.session) {
+    if (data.user) {
       await supabase.from("profiles").upsert({
         id: data.user.id,
         username: cleanUser,
         email: cleanEmail,
         account_type: "WORKER",
       });
+    }
 
-      await supabase.auth.signOut();
+    if (data.user && data.session) {
+      await supabase.auth.signOut({ scope: "local" });
       resetSettings();
       setState({
         loggedIn: false,
@@ -278,7 +376,7 @@ export const session = {
     password: string;
     confirm: string;
   }): Promise<string | null> {
-    const cleanEmail = params.email.trim().toLowerCase();
+    const cleanEmail = sanitizeInput(params.email).toLowerCase();
 
     if (!cleanEmail || !/^\S+@\S+\.\S+$/.test(cleanEmail)) {
       return "Please enter a valid email address.";
@@ -294,6 +392,7 @@ export const session = {
       .from("profiles")
       .select("id")
       .ilike("email", cleanEmail)
+      .limit(1)
       .maybeSingle();
 
     if (!profileRow) {
@@ -324,7 +423,7 @@ export const session = {
   },
 
   async signOut() {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "local" });
     resetSettings();
     setState({
       loggedIn: false,
